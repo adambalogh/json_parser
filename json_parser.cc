@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <cctype>
+#include <unordered_set>
 #include <iostream>
 
 const char kObjectOpen = '{';
@@ -15,6 +16,10 @@ const char kWhitespace = ' ';
 const char kColon = ':';
 const char kComma = ',';
 const char kEscapeChar = '\\';
+
+// Chars that can follow a backslash in a string
+const std::unordered_set<char> following_escape{'"', '\\', '/', 'b',
+                                                'f', 'n',  'r', 't'};
 
 void JsonParser::Parse(const char* p, const char* end) { ParseObject(p, end); }
 
@@ -79,9 +84,12 @@ const char* JsonParser::ParseString(const char* p, const char* end) {
   ++p;
   const char* const string_start = p;
   while (true) {
-    p = Find(p, end, kStringClose);
-    if (*(p - 1) != kEscapeChar) {
+    if (*p == kStringClose) {
       break;
+    }
+    if (*p == kEscapeChar) {
+      ++p;
+      assert(following_escape.count(*p) != 0);
     }
     ++p;
   }
