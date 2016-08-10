@@ -21,7 +21,10 @@ const char kEscapeChar = '\\';
 const std::unordered_set<char> following_escape{'"', '\\', '/', 'b',
                                                 'f', 'n',  'r', 't'};
 
-void JsonParser::Parse(const char* p, const char* end) { ParseObject(p, end); }
+void JsonParser::Parse(const char* p, const char* end) {
+  p = ParseObject(p, end);
+  assert(p == end);
+}
 
 const char* JsonParser::ParseValue(const char* p, const char* end) {
   if (*p == kObjectOpen) {
