@@ -15,7 +15,7 @@ const char kWhitespace = ' ';
 const char kColon = ':';
 const char kComma = ',';
 
-void JsonParser::Parse(const char* p, const char* end) { ParseValue(p, end); }
+void JsonParser::Parse(const char* p, const char* end) { ParseObject(p, end); }
 
 const char* JsonParser::ParseValue(const char* p, const char* end) {
   if (*p == kObjectOpen) {
@@ -68,7 +68,7 @@ const char* JsonParser::ParseArray(const char* p, const char* end) {
     return ++p;
   }
   while (p != end) {
-    p = ParseString(p, end);
+    p = ParseValue(p, end);
     if (*p == kArrayClose) {
       break;
     }
