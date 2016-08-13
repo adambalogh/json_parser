@@ -23,6 +23,7 @@ const char kDot = '.';
 const std::unordered_set<char> following_escape{'"', '\\', '/', 'b',
                                                 'f', 'n',  'r', 't'};
 
+// TODO replace assertions with exceptions
 void JsonParser::Parse(const char* p, const char* end) {
   p = ParseObject(p, end);
   assert(p == end);
@@ -109,6 +110,7 @@ const char* JsonParser::ParseNumber(const char* p, const char* const end) {
     negative = true;
     ++p;
   }
+
   assert(std::isdigit(*p));
 
   if (*p == '0') {
@@ -121,13 +123,18 @@ const char* JsonParser::ParseNumber(const char* p, const char* const end) {
       ++p;
     }
   }
-  int place = 1;
+  // Parse fraction, if present
   if (*p == kDot) {
+    int place = 0;
+    int fraction = 0;
     ++p;
     while (std::isdigit(*p)) {
-      num += static_cast<double>(*p - '0') / pow(10, place++);
+      fraction *= 10;
+      fraction += *p - '0';
+      ++place;
       ++p;
     }
+    num += static_cast<double>(fraction) / pow(10, place);
   }
 
   if (negative) {
