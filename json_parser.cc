@@ -100,10 +100,7 @@ JsonValue::StringType JsonParser::ParseString() {
   assert(*p_ == kStringOpen);
   ++p_;
   const char* const string_start = p_;
-  while (true) {
-    if (*p_ == kStringClose) {
-      break;
-    }
+  while (*p_ != kStringClose) {
     if (*p_ == kEscapeChar) {
       ++p_;
       assert(following_escape.count(*p_) != 0);
