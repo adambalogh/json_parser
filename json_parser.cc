@@ -30,10 +30,10 @@ const std::unordered_set<char> following_escape{'"', '\\', '/', 'b',
 JsonValue JsonParser::Parse() {
   const auto obj = ParseObject();
   assert(p_ == end_);
-  return obj;
+  return JsonValue{obj};
 }
 
-JsonValue JsonParser::ParseObject() {
+JsonValue::ObjectType JsonParser::ParseObject() {
   assert(*p_ == kObjectOpen);
   ++p_;
   if (*p_ == kObjectClose) {
@@ -63,9 +63,9 @@ JsonValue JsonParser::ParseObject() {
 
 JsonValue JsonParser::ParseValue() {
   if (*p_ == kObjectOpen) {
-    return ParseObject();
+    return JsonValue{ParseObject()};
   } else if (*p_ == kArrayOpen) {
-    return ParseArray();
+    return JsonValue{ParseArray()};
   } else if (*p_ == kStringOpen) {
     return JsonValue{ParseString()};
   } else {
@@ -73,7 +73,7 @@ JsonValue JsonParser::ParseValue() {
   }
 }
 
-JsonValue JsonParser::ParseArray() {
+JsonValue::ArrayType JsonParser::ParseArray() {
   assert(*p_ == kArrayOpen);
   ++p_;
   if (*p_ == kArrayClose) {

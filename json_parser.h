@@ -22,8 +22,8 @@ class JsonParser {
 
  private:
   JsonValue ParseValue();
-  JsonValue ParseObject();
-  JsonValue ParseArray();
+  JsonValue::ObjectType ParseObject();
+  JsonValue::ArrayType ParseArray();
   JsonValue::StringType ParseString();
   JsonValue::NumberType ParseNumber();
 
