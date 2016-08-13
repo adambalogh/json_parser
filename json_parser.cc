@@ -16,6 +16,8 @@ const char kWhitespace = ' ';
 const char kColon = ':';
 const char kComma = ',';
 const char kEscapeChar = '\\';
+const char kMinusSign = '-';
+const char kDot = '.';
 
 // Chars that can follow a backslash in a string
 const std::unordered_set<char> following_escape{'"', '\\', '/', 'b',
@@ -24,19 +26,6 @@ const std::unordered_set<char> following_escape{'"', '\\', '/', 'b',
 void JsonParser::Parse(const char* p, const char* end) {
   p = ParseObject(p, end);
   assert(p == end);
-}
-
-const char* JsonParser::ParseValue(const char* p, const char* end) {
-  if (*p == kObjectOpen) {
-    p = ParseObject(p, end);
-  } else if (*p == kArrayOpen) {
-    p = ParseArray(p, end);
-  } else if (*p == kStringOpen) {
-    p = ParseString(p, end);
-  } else {
-    p = ParseNumber(p, end);
-  }
-  return p;
 }
 
 const char* JsonParser::ParseObject(const char* p, const char* end) {
@@ -60,6 +49,19 @@ const char* JsonParser::ParseObject(const char* p, const char* end) {
 
   assert(*p == kObjectClose);
   return ++p;
+}
+
+const char* JsonParser::ParseValue(const char* p, const char* end) {
+  if (*p == kObjectOpen) {
+    p = ParseObject(p, end);
+  } else if (*p == kArrayOpen) {
+    p = ParseArray(p, end);
+  } else if (*p == kStringOpen) {
+    p = ParseString(p, end);
+  } else {
+    p = ParseNumber(p, end);
+  }
+  return p;
 }
 
 const char* JsonParser::ParseArray(const char* p, const char* end) {
@@ -101,12 +103,35 @@ const char* JsonParser::ParseString(const char* p, const char* end) {
 }
 
 const char* JsonParser::ParseNumber(const char* p, const char* const end) {
-  int num = 0;
-  assert(std::isdigit(*p));
-  while (std::isdigit(*p)) {
-    num *= 10;
-    num += *p - '0';
+  double num = 0;
+  bool negative = false;
+  if (*p == kMinusSign) {
+    negative = true;
     ++p;
+  }
+  assert(std::isdigit(*p));
+
+  if (*p == '0') {
+    assert(*(p + 1) == kDot);
+    ++p;
+  } else {
+    while (std::isdigit(*p)) {
+      num *= 10;
+      num += *p - '0';
+      ++p;
+    }
+  }
+  int place = 1;
+  if (*p == kDot) {
+    ++p;
+    while (std::isdigit(*p)) {
+      num += static_cast<double>(*p - '0') / pow(10, place++);
+      ++p;
+    }
+  }
+
+  if (negative) {
+    num *= -1;
   }
   std::cout << "num: " << num << std::endl;
   return p;
