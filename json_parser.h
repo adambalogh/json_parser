@@ -1,6 +1,9 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
+
+#include "json_value.h"
 
 // Json parser using specification from http://json.org/
 //
@@ -10,16 +13,23 @@
 //
 class JsonParser {
  public:
-  void Parse(const char* p, const char* end);
-  void Parse(const std::string& json) { Parse(&json[0], &json[json.size()]); }
+  JsonParser(const char* p, const char* end) : p_(p), end_(end) {}
+
+  JsonParser(const std::string& json)
+      : JsonParser(&json[0], &json[json.size()]) {}
+
+  JsonValue Parse();
 
  private:
-  const char* ParseValue(const char* p, const char* const end);
-  const char* ParseObject(const char* p, const char* const end);
-  const char* ParseArray(const char* p, const char* const end);
-  const char* ParseString(const char* p, const char* const end);
-  const char* ParseNumber(const char* p, const char* const end);
+  JsonValue ParseValue();
+  JsonValue ParseObject();
+  JsonValue ParseArray();
+  JsonValue::StringType ParseString();
+  JsonValue::NumberType ParseNumber();
 
-  const char* SkipWhitespace(const char* p, const char* const end);
-  const char* Find(const char* p, const char* const end, const char val);
+  void SkipWhitespace();
+  void Find(const char val);
+
+  const char* p_;
+  const char* const end_;
 };

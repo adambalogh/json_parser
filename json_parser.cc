@@ -19,120 +19,132 @@ const char kEscapeChar = '\\';
 const char kMinusSign = '-';
 const char kDot = '.';
 
+// TODO replace assertions with exceptions
+// TODO implement parsing of true, false, null
+// TODO implement parsing of number exponent
+
 // Chars that can follow a backslash in a string
 const std::unordered_set<char> following_escape{'"', '\\', '/', 'b',
                                                 'f', 'n',  'r', 't'};
 
-// TODO replace assertions with exceptions
-void JsonParser::Parse(const char* p, const char* end) {
-  p = ParseObject(p, end);
-  assert(p == end);
+JsonValue JsonParser::Parse() {
+  const auto obj = ParseObject();
+  assert(p_ == end_);
+  return obj;
 }
 
-const char* JsonParser::ParseObject(const char* p, const char* end) {
-  assert(*p == kObjectOpen);
-  ++p;
-  if (*p == kObjectClose) {
-    return ++p;
+JsonValue JsonParser::ParseObject() {
+  assert(*p_ == kObjectOpen);
+  ++p_;
+  if (*p_ == kObjectClose) {
+    ++p_;
+    return JsonValue::ObjectType{};
   }
 
+  JsonValue::ObjectType obj;
+  JsonValue::StringType key;
   while (true) {
-    p = ParseString(p, end);
-    assert(*p == kColon);
-    ++p;
-    p = ParseValue(p, end);
-    if (*p == kObjectClose) {
+    key = ParseString();
+    assert(*p_ == kColon);
+    ++p_;
+    obj.emplace(key, std::move(ParseValue()));
+    if (*p_ == kObjectClose) {
       break;
     }
-    assert(*p == kComma);
-    ++p;
+    assert(*p_ == kComma);
+    ++p_;
   }
 
-  assert(*p == kObjectClose);
-  return ++p;
+  assert(*p_ == kObjectClose);
+  ++p_;
+
+  return obj;
 }
 
-const char* JsonParser::ParseValue(const char* p, const char* end) {
-  if (*p == kObjectOpen) {
-    p = ParseObject(p, end);
-  } else if (*p == kArrayOpen) {
-    p = ParseArray(p, end);
-  } else if (*p == kStringOpen) {
-    p = ParseString(p, end);
+JsonValue JsonParser::ParseValue() {
+  if (*p_ == kObjectOpen) {
+    return ParseObject();
+  } else if (*p_ == kArrayOpen) {
+    return ParseArray();
+  } else if (*p_ == kStringOpen) {
+    return JsonValue{ParseString()};
   } else {
-    p = ParseNumber(p, end);
+    return JsonValue{ParseNumber()};
   }
-  return p;
 }
 
-const char* JsonParser::ParseArray(const char* p, const char* end) {
-  assert(*p == kArrayOpen);
-  ++p;
-  if (*p == kArrayClose) {
-    return ++p;
+JsonValue JsonParser::ParseArray() {
+  assert(*p_ == kArrayOpen);
+  ++p_;
+  if (*p_ == kArrayClose) {
+    ++p_;
+    return JsonValue::ArrayType{};
   }
 
+  JsonValue::ArrayType arr;
   while (true) {
-    p = ParseValue(p, end);
-    if (*p == kArrayClose) {
+    arr.push_back(ParseValue());
+    if (*p_ == kArrayClose) {
       break;
     }
-    assert(*p == kComma);
-    ++p;
+    assert(*p_ == kComma);
+    ++p_;
   }
 
-  assert(*p == kArrayClose);
-  return ++p;
+  assert(*p_ == kArrayClose);
+  ++p_;
+  return arr;
 }
 
-const char* JsonParser::ParseString(const char* p, const char* end) {
-  assert(*p == kStringOpen);
-  ++p;
-  const char* const string_start = p;
+JsonValue::StringType JsonParser::ParseString() {
+  assert(*p_ == kStringOpen);
+  ++p_;
+  const char* const string_start = p_;
   while (true) {
-    if (*p == kStringClose) {
+    if (*p_ == kStringClose) {
       break;
     }
-    if (*p == kEscapeChar) {
-      ++p;
-      assert(following_escape.count(*p) != 0);
+    if (*p_ == kEscapeChar) {
+      ++p_;
+      assert(following_escape.count(*p_) != 0);
     }
-    ++p;
+    ++p_;
   }
-  std::cout << "string: " << std::string{string_start, p} << std::endl;
-  return ++p;
+  JsonValue::StringType str{string_start, p_};
+  ++p_;
+  return str;
 }
 
-const char* JsonParser::ParseNumber(const char* p, const char* const end) {
-  double num = 0;
+JsonValue::NumberType JsonParser::ParseNumber() {
+  JsonValue::NumberType num = 0;
   bool negative = false;
-  if (*p == kMinusSign) {
+  if (*p_ == kMinusSign) {
     negative = true;
-    ++p;
+    ++p_;
   }
 
-  assert(std::isdigit(*p));
+  assert(std::isdigit(*p_));
 
-  if (*p == '0') {
-    assert(*(p + 1) == kDot);
-    ++p;
+  if (*p_ == '0') {
+    assert(*(p_ + 1) == kDot);
+    ++p_;
   } else {
-    while (std::isdigit(*p)) {
+    while (std::isdigit(*p_)) {
       num *= 10;
-      num += *p - '0';
-      ++p;
+      num += *p_ - '0';
+      ++p_;
     }
   }
   // Parse fraction, if present
-  if (*p == kDot) {
+  if (*p_ == kDot) {
     int place = 0;
     int fraction = 0;
-    ++p;
-    while (std::isdigit(*p)) {
+    ++p_;
+    while (std::isdigit(*p_)) {
       fraction *= 10;
-      fraction += *p - '0';
+      fraction += *p_ - '0';
       ++place;
-      ++p;
+      ++p_;
     }
     num += static_cast<double>(fraction) / pow(10, place);
   }
@@ -140,20 +152,17 @@ const char* JsonParser::ParseNumber(const char* p, const char* const end) {
   if (negative) {
     num *= -1;
   }
-  std::cout << "num: " << num << std::endl;
-  return p;
+  return num;
 }
 
-const char* JsonParser::Find(const char* p, const char* end, const char val) {
-  while (*p != val) {
-    ++p;
+void JsonParser::Find(const char val) {
+  while (*p_ != val) {
+    ++p_;
   }
-  return p;
 }
 
-const char* JsonParser::SkipWhitespace(const char* p, const char* end) {
-  while (*p == kWhitespace) {
-    ++p;
+void JsonParser::SkipWhitespace() {
+  while (*p_ == kWhitespace) {
+    ++p_;
   }
-  return p;
 }
