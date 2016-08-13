@@ -19,14 +19,10 @@ class JsonValue {
   using StringType = std::string;
   using NumberType = double;
 
-  explicit JsonValue(const ObjectType obj)
-      : type_(OBJECT), obj_(std::move(obj)) {}
-  explicit JsonValue(const ArrayType arr)
-      : type_(ARRAY), arr_(std::move(arr)) {}
-  explicit JsonValue(const StringType str)
-      : type_(STRING), str_(std::move(str)) {}
-  explicit JsonValue(const NumberType num)
-      : type_(NUMBER), num_(std::move(num)) {}
+  explicit JsonValue(ObjectType obj) : type_(OBJECT), obj_(std::move(obj)) {}
+  explicit JsonValue(ArrayType arr) : type_(ARRAY), arr_(std::move(arr)) {}
+  explicit JsonValue(StringType str) : type_(STRING), str_(std::move(str)) {}
+  explicit JsonValue(NumberType num) : type_(NUMBER), num_(std::move(num)) {}
 
   template <int Type>
   bool is() {
