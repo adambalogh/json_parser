@@ -8,22 +8,19 @@
 // TODO do this with templates
 class JsonValue {
  public:
-  enum Type {
-    OBJECT,
-    ARRAY,
-    STRING,
-    NUMBER,
-  };
+  enum Type { OBJECT, ARRAY, STRING, NUMBER, BOOL };
 
   using ObjectType = std::unordered_map<std::string, JsonValue>;
   using ArrayType = std::vector<JsonValue>;
   using StringType = std::string;
   using NumberType = double;
+  using BoolType = bool;
 
   explicit JsonValue(ObjectType obj) : type_(OBJECT), obj_(std::move(obj)) {}
   explicit JsonValue(ArrayType arr) : type_(ARRAY), arr_(std::move(arr)) {}
   explicit JsonValue(StringType str) : type_(STRING), str_(std::move(str)) {}
   explicit JsonValue(NumberType num) : type_(NUMBER), num_(std::move(num)) {}
+  explicit JsonValue(BoolType val) : type_(BOOL), bool_(val) {}
 
   template <int Type>
   bool is() {
@@ -58,10 +55,18 @@ class JsonValue {
     return num_;
   }
 
+  BoolType getBool() {
+    if (type_ != BOOL) {
+      throw std::runtime_error("not a bool");
+    }
+    return bool_;
+  }
+
   operator ObjectType() { return getObject(); }
   operator ArrayType() { return getArray(); }
   operator StringType() { return getString(); }
   operator NumberType() { return getNumber(); }
+  operator BoolType() { return getBool(); }
 
   std::string to_string() const {
     std::string out;
@@ -85,10 +90,13 @@ class JsonValue {
         out += "]";
         break;
       case STRING:
-        out += str_;
+        out += "\"" + str_ + "\"";
         break;
       case NUMBER:
         out += std::to_string(num_);
+        break;
+      case BOOL:
+        out += bool_ ? "true" : "false";
         break;
     }
     return out;
@@ -101,4 +109,5 @@ class JsonValue {
   ArrayType arr_;
   StringType str_;
   NumberType num_;
+  BoolType bool_;
 };
