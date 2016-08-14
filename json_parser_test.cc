@@ -10,28 +10,40 @@ using std::string;
 
 TEST(JsonParser, EmptyJson) {
   string e = "{}";
-  std::cout << JsonParser{e}.Parse().to_string() << std::endl;
+  auto obj = JsonParser{e}.Parse().getObject();
+  EXPECT_EQ(0, obj.size());
 }
 
 TEST(JsonParser, GetString) {
   string e = "{\"name\":\"Adam\"}";
   auto obj = JsonParser{e}.Parse();
-  EXPECT_TRUE(obj.is<JsonValue::OBJECT>());
   EXPECT_TRUE(obj.getObject().at("name").is<JsonValue::STRING>());
   EXPECT_EQ("Adam", obj.getObject().at("name").getString());
+}
+
+TEST(JsonParser, EmptyArray) {
+  string e = "{\"name\":[]}";
+  auto obj = JsonParser{e}.Parse();
+  EXPECT_TRUE(obj.getObject().at("name").is<JsonValue::ARRAY>());
+  EXPECT_EQ(0, obj.getObject().at("name").getArray().size());
 }
 
 TEST(JsonParser, Complex) {
   string e =
       "{\"name\":\"Carl\",\"age\":-0.010,\"food\":[\"spaghetti\",\"ice-"
-      "cream\"],\"empty\":{},\"sub\":{\"fake\":-10.94}}";
-  std::cout << JsonParser{e}.Parse().to_string() << std::endl;
+      "cream\"],\"sub\":{\"fake\":-10.94}}";
+  auto obj = JsonParser{e}.Parse().getObject();
+  EXPECT_EQ("Carl", obj.at("name").getString());
+  EXPECT_EQ(-0.01, obj.at("age").getNumber());
+  EXPECT_TRUE(obj.at("sub").is<JsonValue::OBJECT>());
+  EXPECT_EQ(-10.94, obj.at("sub").getObject().at("fake").getNumber());
 }
 
-TEST(JsonParser, StringEscapeChar) {
-  std::vector<string> test_cases{"{\"name\":\"\\\\\"}", "{\"name\":\"\\\"\"}"};
+TEST(JsonParser, StringEscape) {
+  std::vector<string> test_cases{"\\\\", "\\\""};
   for (auto& t : test_cases) {
-    std::cout << JsonParser{t}.Parse().to_string() << std::endl;
+    std::string json = "{\"name\":\"" + t + "\"}";
+    EXPECT_EQ(t, JsonParser{json}.Parse().getObject().at("name").getString());
   }
 }
 
