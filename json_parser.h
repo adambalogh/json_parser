@@ -7,16 +7,14 @@
 
 // Json parser using specification from http://json.org/
 //
-// Current implementation assumes that the given string's syntax is correct, and
-// it only prints the values it finds. It doesn't tolerate any whitespace
-// either.
+// Current implementation doesn't tolerate any whitespace.
 //
 class JsonParser {
  public:
   JsonParser(const char* p, const char* end) : p_(p), end_(end) {}
 
   JsonParser(const std::string& json)
-      : JsonParser(&json[0], &json[json.size()]) {}
+      : JsonParser(&json[0], &json[0] + json.size()) {}
 
   JsonValue Parse();
 
