@@ -1,5 +1,6 @@
 #pragma once
 
+#include <assert.h>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -29,10 +30,38 @@ class JsonValue {
     return type_ == Type;
   }
 
-  ObjectType getObject() { return obj_; }
-  ArrayType getArray() { return arr_; }
-  StringType getString() { return str_; }
-  NumberType getNumber() { return num_; }
+  ObjectType getObject() {
+    if (type_ != OBJECT) {
+      throw std::runtime_error("not an object");
+    }
+    return obj_;
+  }
+
+  ArrayType getArray() {
+    if (type_ != ARRAY) {
+      throw std::runtime_error("not an array");
+    }
+    return arr_;
+  }
+
+  StringType getString() {
+    if (type_ != STRING) {
+      throw std::runtime_error("not a string");
+    }
+    return str_;
+  }
+
+  NumberType getNumber() {
+    if (type_ != NUMBER) {
+      throw std::runtime_error("not a number");
+    }
+    return num_;
+  }
+
+  operator ObjectType() { return getObject(); }
+  operator ArrayType() { return getArray(); }
+  operator StringType() { return getString(); }
+  operator NumberType() { return getNumber(); }
 
   std::string to_string() const {
     std::string out;
