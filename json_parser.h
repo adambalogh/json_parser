@@ -26,9 +26,11 @@ class JsonParser {
   JsonValue::ArrayType ParseArray();
   JsonValue::StringType ParseString();
   JsonValue::NumberType ParseNumber();
+  JsonValue::BoolType ParseBool();
 
   void SkipWhitespace();
   void Find(const char val);
+  bool Match(const std::string& val);
 
   const char* p_;
   const char* const end_;

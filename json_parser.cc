@@ -18,6 +18,8 @@ const char kComma = ',';
 const char kEscapeChar = '\\';
 const char kMinusSign = '-';
 const char kDot = '.';
+const std::string kTrue = "true";
+const std::string kFalse = "false";
 
 // TODO replace assertions with exceptions
 // TODO implement parsing of true, false, null
@@ -64,13 +66,17 @@ JsonValue::ObjectType JsonParser::ParseObject() {
 JsonValue JsonParser::ParseValue() {
   if (*p_ == kObjectOpen) {
     return JsonValue{ParseObject()};
-  } else if (*p_ == kArrayOpen) {
-    return JsonValue{ParseArray()};
-  } else if (*p_ == kStringOpen) {
-    return JsonValue{ParseString()};
-  } else {
-    return JsonValue{ParseNumber()};
   }
+  if (*p_ == kArrayOpen) {
+    return JsonValue{ParseArray()};
+  }
+  if (*p_ == kStringOpen) {
+    return JsonValue{ParseString()};
+  }
+  if (*p_ == 't' || *p_ == 'f') {
+    return JsonValue(ParseBool());
+  }
+  return JsonValue{ParseNumber()};
 }
 
 JsonValue::ArrayType JsonParser::ParseArray() {
@@ -150,6 +156,29 @@ JsonValue::NumberType JsonParser::ParseNumber() {
     num *= -1;
   }
   return num;
+}
+
+JsonValue::BoolType JsonParser::ParseBool() {
+  if (Match(kTrue)) {
+    return JsonValue{true};
+  }
+  if (Match(kFalse)) {
+    return JsonValue{false};
+  }
+  throw std::runtime_error("invalid bool value");
+}
+
+bool JsonParser::Match(const std::string& val) {
+  for (int i = 0; i < val.size(); ++i) {
+    if (p_ + i == end_) {
+      return false;
+    }
+    if (*(p_ + i) != val[i]) {
+      return false;
+    }
+  }
+  p_ += val.size();
+  return true;
 }
 
 void JsonParser::Find(const char val) {

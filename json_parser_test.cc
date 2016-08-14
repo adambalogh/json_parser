@@ -21,6 +21,13 @@ TEST(JsonParser, GetString) {
   EXPECT_EQ("Adam", obj.getObject().at("name").getString());
 }
 
+TEST(JsonParser, Bool) {
+  string e = "{\"val\":true}";
+  auto obj = JsonParser{e}.Parse();
+  EXPECT_TRUE(obj.getObject().at("val").is<JsonValue::BOOL>());
+  EXPECT_EQ(true, obj.getObject().at("val").getBool());
+}
+
 TEST(JsonParser, EmptyArray) {
   string e = "{\"name\":[]}";
   auto obj = JsonParser{e}.Parse();
