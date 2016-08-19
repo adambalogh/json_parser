@@ -30,7 +30,7 @@ const std::unordered_set<char> following_escape{'"', '\\', '/', 'b',
                                                 'f', 'n',  'r', 't'};
 
 JsonParser::ControlToken JsonParser::GetNextControlToken() {
-  SkipWhitespace();
+  SkipSpace();
   switch (*p_) {
     case kObjectOpen:
       return OBJECT_OPEN;
@@ -53,12 +53,13 @@ JsonParser::ControlToken JsonParser::GetNextControlToken() {
       if (*p_ == kMinusSign || std::isdigit(*p_)) {
         return NUMBER;
       }
-      throw std::runtime_error("invalid control token");
+      throw std::runtime_error("invalid " + std::string{*p_});
   }
 }
 
 JsonValue JsonParser::Parse() {
   const auto obj = ParseValue();
+  SkipSpace();
   assert(p_ == end_);
   return obj;
 }
@@ -218,8 +219,8 @@ bool JsonParser::Match(const std::string& val) {
   return true;
 }
 
-void JsonParser::SkipWhitespace() {
-  while (*p_ == kWhitespace) {
+void JsonParser::SkipSpace() {
+  while (std::isspace(*p_)) {
     AdvanceChar();
   }
 }

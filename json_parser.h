@@ -44,7 +44,7 @@ class JsonParser {
 
   ControlToken GetNextControlToken();
 
-  inline void SkipWhitespace();
+  inline void SkipSpace();
 
   // Tries to match the given string, starting from p_.
   // If successful, returns true, and sets p_ past the matched string.
