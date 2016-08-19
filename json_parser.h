@@ -27,7 +27,7 @@ class JsonParser {
     ARRAY_OPEN,    // start parsing array
     ARRAY_CLOSE,   // end parsing array
     COMMA,         // continue parsing array or object
-    STRING,        // start or end parsing a string
+    STRING,        // parse a string
     COLON,         // parse value in object key-value pair
     BOOL,          // parse a bool
     NUMBER,        // parse number
@@ -45,13 +45,12 @@ class JsonParser {
   ControlToken GetNextControlToken();
 
   inline void SkipWhitespace();
-  inline void Find(const char val);
 
   // Tries to match the given string, starting from p_.
   // If successful, returns true, and sets p_ past the matched string.
   inline bool Match(const std::string& val);
 
-  inline void Advance() { ++p_; }
+  inline void AdvanceChar() { ++p_; }
 
   const char* p_;
   const char* const end_;

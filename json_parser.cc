@@ -31,7 +31,6 @@ const std::unordered_set<char> following_escape{'"', '\\', '/', 'b',
 
 JsonParser::ControlToken JsonParser::GetNextControlToken() {
   SkipWhitespace();
-  ControlToken token;
   switch (*p_) {
     case kObjectOpen:
       return OBJECT_OPEN;
@@ -54,9 +53,7 @@ JsonParser::ControlToken JsonParser::GetNextControlToken() {
       if (*p_ == kMinusSign || std::isdigit(*p_)) {
         return NUMBER;
       }
-      std::string error = "invalid control token: ";
-      error += *p_;
-      throw std::runtime_error(error);
+      throw std::runtime_error("invalid control token");
   }
 }
 
@@ -87,7 +84,7 @@ JsonValue JsonParser::ParseValue(const ControlToken ct) {
 
 JsonValue::ObjectType JsonParser::ParseObject() {
   assert(*p_ == kObjectOpen);
-  Advance();
+  AdvanceChar();
 
   ControlToken ct = GetNextControlToken();
 
@@ -99,24 +96,24 @@ JsonValue::ObjectType JsonParser::ParseObject() {
     key = ParseString();
     ct = GetNextControlToken();
     assert(ct == COLON);
-    Advance();
+    AdvanceChar();
     obj.emplace(key, std::move(ParseValue()));
     ct = GetNextControlToken();
     if (ct != COMMA) {
       break;
     }
-    Advance();
+    AdvanceChar();
     ct = GetNextControlToken();
   }
 
   assert(*p_ == kObjectClose);
-  Advance();
+  AdvanceChar();
   return obj;
 }
 
 JsonValue::ArrayType JsonParser::ParseArray() {
   assert(*p_ == kArrayOpen);
-  Advance();
+  AdvanceChar();
 
   ControlToken ct = GetNextControlToken();
 
@@ -127,64 +124,64 @@ JsonValue::ArrayType JsonParser::ParseArray() {
     if (ct != COMMA) {
       break;
     }
-    Advance();
+    AdvanceChar();
     ct = GetNextControlToken();
   }
 
   assert(*p_ == kArrayClose);
-  Advance();
+  AdvanceChar();
   return arr;
 }
 
 JsonValue::StringType JsonParser::ParseString() {
   assert(*p_ == kStringOpen);
-  Advance();
+  AdvanceChar();
 
   const char* const string_start = p_;
   while (*p_ != kStringClose) {
     if (*p_ == kEscapeChar) {
-      Advance();
+      AdvanceChar();
       assert(following_escape.count(*p_) != 0);
     }
-    Advance();
+    AdvanceChar();
   }
   JsonValue::StringType str{string_start, p_};
-  Advance();
+  AdvanceChar();
   return str;
 }
 
 JsonValue::NumberType JsonParser::ParseNumber() {
-  JsonValue::NumberType num = 0;
   bool negative = false;
   if (*p_ == kMinusSign) {
     negative = true;
-    Advance();
+    AdvanceChar();
   }
 
   assert(std::isdigit(*p_));
+  JsonValue::NumberType num = 0;
 
   if (*p_ == '0') {
     assert(*(p_ + 1) == kDot);
-    Advance();
+    AdvanceChar();
   } else {
     while (std::isdigit(*p_)) {
       num *= 10;
       num += *p_ - '0';
-      Advance();
+      AdvanceChar();
     }
   }
   // Parse fraction, if present
   if (*p_ == kDot) {
-    int place = 0;
+    int power_of_ten = 0;
     int fraction = 0;
-    Advance();
+    AdvanceChar();
     while (std::isdigit(*p_)) {
       fraction *= 10;
       fraction += *p_ - '0';
-      ++place;
-      Advance();
+      ++power_of_ten;
+      AdvanceChar();
     }
-    num += static_cast<double>(fraction) / pow(10, place);
+    num += static_cast<double>(fraction) / pow(10, power_of_ten);
   }
 
   if (negative) {
@@ -216,14 +213,8 @@ bool JsonParser::Match(const std::string& val) {
   return true;
 }
 
-void JsonParser::Find(const char val) {
-  while (*p_ != val) {
-    Advance();
-  }
-}
-
 void JsonParser::SkipWhitespace() {
   while (*p_ == kWhitespace) {
-    Advance();
+    AdvanceChar();
   }
 }
