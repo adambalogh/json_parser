@@ -5,12 +5,6 @@
 #include <unordered_set>
 #include <iostream>
 
-// Removes whitespace before and after a json element is parsed
-#define WS(line)    \
-  SkipWhitespace(); \
-  line;             \
-  SkipWhitespace();
-
 const char kObjectOpen = '{';
 const char kObjectClose = '}';
 const char kArrayOpen = '[';
@@ -38,7 +32,7 @@ const std::unordered_set<char> following_escape{'"', '\\', '/', 'b',
 JsonParser::ControlToken JsonParser::GetNextControlToken() {
   SkipWhitespace();
   ControlToken token;
-  switch (GetChar()) {
+  switch (*p_) {
     case kObjectOpen:
       return OBJECT_OPEN;
     case kObjectClose:
@@ -57,7 +51,7 @@ JsonParser::ControlToken JsonParser::GetNextControlToken() {
     case 'f':
       return BOOL;
     default:
-      if (*p_ == kMinusSign || std::isdigit(GetChar())) {
+      if (*p_ == kMinusSign || std::isdigit(*p_)) {
         return NUMBER;
       }
       std::string error = "invalid control token: ";
@@ -72,7 +66,7 @@ JsonValue JsonParser::Parse() {
   return obj;
 }
 
-JsonValue JsonParser::ParseValue(ControlToken ct) {
+JsonValue JsonParser::ParseValue(const ControlToken ct) {
   if (ct == OBJECT_OPEN) {
     return JsonValue{ParseObject()};
   }
@@ -92,8 +86,8 @@ JsonValue JsonParser::ParseValue(ControlToken ct) {
 }
 
 JsonValue::ObjectType JsonParser::ParseObject() {
-  assert(GetChar() == kObjectOpen);
-  NextChar();
+  assert(*p_ == kObjectOpen);
+  Advance();
 
   ControlToken ct = GetNextControlToken();
 
@@ -105,24 +99,24 @@ JsonValue::ObjectType JsonParser::ParseObject() {
     key = ParseString();
     ct = GetNextControlToken();
     assert(ct == COLON);
-    NextChar();
+    Advance();
     obj.emplace(key, std::move(ParseValue()));
     ct = GetNextControlToken();
     if (ct != COMMA) {
       break;
     }
-    NextChar();
+    Advance();
     ct = GetNextControlToken();
   }
 
-  assert(GetChar() == kObjectClose);
-  NextChar();
+  assert(*p_ == kObjectClose);
+  Advance();
   return obj;
 }
 
 JsonValue::ArrayType JsonParser::ParseArray() {
-  assert(GetChar() == kArrayOpen);
-  NextChar();
+  assert(*p_ == kArrayOpen);
+  Advance();
 
   ControlToken ct = GetNextControlToken();
 
@@ -133,62 +127,62 @@ JsonValue::ArrayType JsonParser::ParseArray() {
     if (ct != COMMA) {
       break;
     }
-    NextChar();
+    Advance();
     ct = GetNextControlToken();
   }
 
-  assert(GetChar() == kArrayClose);
-  NextChar();
+  assert(*p_ == kArrayClose);
+  Advance();
   return arr;
 }
 
 JsonValue::StringType JsonParser::ParseString() {
-  assert(GetChar() == kStringOpen);
-  NextChar();
+  assert(*p_ == kStringOpen);
+  Advance();
 
   const char* const string_start = p_;
-  while (GetChar() != kStringClose) {
-    if (GetChar() == kEscapeChar) {
-      NextChar();
-      assert(following_escape.count(GetChar()) != 0);
+  while (*p_ != kStringClose) {
+    if (*p_ == kEscapeChar) {
+      Advance();
+      assert(following_escape.count(*p_) != 0);
     }
-    NextChar();
+    Advance();
   }
   JsonValue::StringType str{string_start, p_};
-  NextChar();
+  Advance();
   return str;
 }
 
 JsonValue::NumberType JsonParser::ParseNumber() {
   JsonValue::NumberType num = 0;
   bool negative = false;
-  if (GetChar() == kMinusSign) {
+  if (*p_ == kMinusSign) {
     negative = true;
-    NextChar();
+    Advance();
   }
 
-  assert(std::isdigit(GetChar()));
+  assert(std::isdigit(*p_));
 
-  if (GetChar() == '0') {
+  if (*p_ == '0') {
     assert(*(p_ + 1) == kDot);
-    NextChar();
+    Advance();
   } else {
-    while (std::isdigit(GetChar())) {
+    while (std::isdigit(*p_)) {
       num *= 10;
-      num += GetChar() - '0';
-      NextChar();
+      num += *p_ - '0';
+      Advance();
     }
   }
   // Parse fraction, if present
-  if (GetChar() == kDot) {
+  if (*p_ == kDot) {
     int place = 0;
     int fraction = 0;
-    NextChar();
-    while (std::isdigit(GetChar())) {
+    Advance();
+    while (std::isdigit(*p_)) {
       fraction *= 10;
-      fraction += GetChar() - '0';
+      fraction += *p_ - '0';
       ++place;
-      NextChar();
+      Advance();
     }
     num += static_cast<double>(fraction) / pow(10, place);
   }
@@ -223,13 +217,13 @@ bool JsonParser::Match(const std::string& val) {
 }
 
 void JsonParser::Find(const char val) {
-  while (GetChar() != val) {
-    NextChar();
+  while (*p_ != val) {
+    Advance();
   }
 }
 
 void JsonParser::SkipWhitespace() {
-  while (GetChar() == kWhitespace) {
-    NextChar();
+  while (*p_ == kWhitespace) {
+    Advance();
   }
 }

@@ -17,7 +17,7 @@ class JsonParser {
   JsonValue Parse();
 
  private:
-  // ControlTokens control the behaviour of the parser.
+  // A ControlToken controls the behaviour of the parser.
   //
   // E.g. on receiving an OBJECT_OPEN, it will start parsing
   // a json object.
@@ -28,12 +28,12 @@ class JsonParser {
     ARRAY_CLOSE,   // end parsing array
     COMMA,         // continue parsing array or object
     STRING,        // start or end parsing a string
-    COLON,         // parse value in object (e.g. key : value)
+    COLON,         // parse value in object key-value pair
     BOOL,          // parse a bool
     NUMBER,        // parse number
   };
 
-  JsonValue ParseValue(ControlToken tk);
+  JsonValue ParseValue(const ControlToken tk);
   JsonValue ParseValue() { return ParseValue(GetNextControlToken()); }
 
   JsonValue::ObjectType ParseObject();
@@ -51,8 +51,7 @@ class JsonParser {
   // If successful, returns true, and sets p_ past the matched string.
   inline bool Match(const std::string& val);
 
-  inline char GetChar() const { return *p_; }
-  inline void NextChar() { ++p_; }
+  inline void Advance() { ++p_; }
 
   const char* p_;
   const char* const end_;
