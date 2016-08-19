@@ -136,6 +136,7 @@ JsonValue::ArrayType JsonParser::ParseArray() {
   return arr;
 }
 
+// TODO this doesn't handle UTF-8 and some other edge cases
 JsonValue::StringType JsonParser::ParseString() {
   assert(*p_ == kStringOpen);
   AdvanceChar();
