@@ -100,6 +100,7 @@ JsonValue::ObjectType JsonParser::ParseObject() {
     obj.emplace(key, std::move(ParseValue()));
     ct = GetNextControlToken();
     if (ct != COMMA) {
+      assert(ct == OBJECT_CLOSE);
       break;
     }
     AdvanceChar();
@@ -118,10 +119,12 @@ JsonValue::ArrayType JsonParser::ParseArray() {
   ControlToken ct = GetNextControlToken();
 
   JsonValue::ArrayType arr;
+
   while (ct != ARRAY_CLOSE) {
     arr.push_back(ParseValue(ct));
     ct = GetNextControlToken();
     if (ct != COMMA) {
+      assert(ct == ARRAY_CLOSE);
       break;
     }
     AdvanceChar();
@@ -145,6 +148,7 @@ JsonValue::StringType JsonParser::ParseString() {
     }
     AdvanceChar();
   }
+
   JsonValue::StringType str{string_start, p_};
   AdvanceChar();
   return str;

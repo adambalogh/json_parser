@@ -54,11 +54,16 @@ TEST(JsonParser, StringEscape) {
   }
 }
 
-TEST(JsonParse, HandlesWhiteSpace) {
+TEST(JsonParser, HandlesWhiteSpace) {
   string e = " { \" na me \"   :  \" A da m \"    , \"age   \":  10  }";
   auto obj = JsonParser{e}.Parse().getObject();
   EXPECT_EQ(" A da m ", obj.at(" na me ").getString());
   EXPECT_EQ(10, obj.at("age   ").getNumber());
+}
+
+TEST(JsonParser, InvalidBool) {
+  string e = "{\"val\": trio}";
+  EXPECT_THROW(JsonParser{e}.Parse(), std::runtime_error);
 }
 
 int main(int argc, char** argv) {

@@ -23,9 +23,9 @@ class JsonParser {
   // a json object.
   enum ControlToken {
     OBJECT_OPEN,   // start parsing object
-    OBJECT_CLOSE,  // end parsing object
+    OBJECT_CLOSE,  // stop parsing object
     ARRAY_OPEN,    // start parsing array
-    ARRAY_CLOSE,   // end parsing array
+    ARRAY_CLOSE,   // stop parsing array
     COMMA,         // continue parsing array or object
     STRING,        // parse a string
     COLON,         // parse value in object key-value pair
