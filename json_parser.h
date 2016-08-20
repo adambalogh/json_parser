@@ -31,6 +31,7 @@ class JsonParser {
     COLON,         // parse value in object key-value pair
     BOOL,          // parse a bool
     NUMBER,        // parse number
+    NULL_VALUE,    // parse a null
   };
 
   JsonValue ParseValue(const ControlToken tk);
@@ -41,6 +42,7 @@ class JsonParser {
   JsonValue::StringType ParseString();
   JsonValue::NumberType ParseNumber();
   JsonValue::BoolType ParseBool();
+  JsonValue ParseNull();
 
   ControlToken GetNextControlToken();
 

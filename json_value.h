@@ -8,7 +8,7 @@
 // TODO do this with templates
 class JsonValue {
  public:
-  enum Type { OBJECT, ARRAY, STRING, NUMBER, BOOL };
+  enum Type { OBJECT, ARRAY, STRING, NUMBER, BOOL, NULL_VALUE };
 
   using ObjectType = std::unordered_map<std::string, JsonValue>;
   using ArrayType = std::vector<JsonValue>;
@@ -21,6 +21,7 @@ class JsonValue {
   explicit JsonValue(StringType str) : type_(STRING), str_(std::move(str)) {}
   explicit JsonValue(NumberType num) : type_(NUMBER), num_(std::move(num)) {}
   explicit JsonValue(BoolType val) : type_(BOOL), bool_(val) {}
+  explicit JsonValue() : type_(NULL_VALUE) {}
 
   template <int Type>
   bool is() {
@@ -98,6 +99,8 @@ class JsonValue {
       case BOOL:
         out += bool_ ? "true" : "false";
         break;
+      case NULL_VALUE:
+        out += "null";
     }
     return out;
   }

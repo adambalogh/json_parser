@@ -20,9 +20,9 @@ const char kMinusSign = '-';
 const char kDot = '.';
 const std::string kTrue = "true";
 const std::string kFalse = "false";
+const std::string kNull = "null";
 
 // TODO replace assertions with exceptions
-// TODO implement parsing of null
 // TODO implement parsing of number exponent
 
 // Chars that can follow a backslash in a string
@@ -49,6 +49,8 @@ JsonParser::ControlToken JsonParser::GetNextControlToken() {
     case 't':
     case 'f':
       return BOOL;
+    case 'n':
+      return NULL_VALUE;
     default:
       if (*p_ == kMinusSign || std::isdigit(*p_)) {
         return NUMBER;
@@ -79,6 +81,9 @@ JsonValue JsonParser::ParseValue(const ControlToken ct) {
   }
   if (ct == NUMBER) {
     return JsonValue{ParseNumber()};
+  }
+  if (ct == NULL_VALUE) {
+    return ParseNull();
   }
   throw std::runtime_error("invalid control token");
 }
@@ -204,6 +209,13 @@ JsonValue::BoolType JsonParser::ParseBool() {
     return JsonValue{false};
   }
   throw std::runtime_error("invalid bool value");
+}
+
+JsonValue JsonParser::ParseNull() {
+  if (Match(kNull)) {
+    return JsonValue();
+  }
+  throw std::runtime_error("invalid null value");
 }
 
 bool JsonParser::Match(const std::string& val) {
