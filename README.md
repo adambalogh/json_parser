@@ -17,9 +17,9 @@ int main() {
   JsonValue::ObjectType person = value.getObject();
 
   assert(person.at("name").is<JsonValue::STRING>());
-  person.at("name").getString();  // == "John"
+  std::string name = person.at("name");  // == "John"
 
   assert(person.at("age").is<JsonValue::NUMBER>());
-  person.at("age").getNumber();  // == 31
+  double age = person.at("age");  // == 31
 }
 ```
