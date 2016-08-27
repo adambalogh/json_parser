@@ -13,8 +13,7 @@ Under development.
 int main() {
   std::string json = "{\"name\": \"John\", \"age\": 31}";
 
-  JsonValue value = JsonParser{json}.Parse();
-  JsonValue::ObjectType person = value.getObject();
+  JsonValue::ObjectType person = JsonParser{json}.Parse();
 
   assert(person.at("name").is<JsonValue::STRING>());
   std::string name = person.at("name");  // == "John"
@@ -22,4 +21,5 @@ int main() {
   assert(person.at("age").is<JsonValue::NUMBER>());
   double age = person.at("age");  // == 31
 }
+
 ```
