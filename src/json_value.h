@@ -5,6 +5,8 @@
 #include <unordered_map>
 #include <vector>
 
+namespace jp {
+
 // TODO do this with templates
 class JsonValue {
  public:
@@ -130,3 +132,4 @@ class JsonValue {
   NumberType num_;
   BoolType bool_;
 };
+}

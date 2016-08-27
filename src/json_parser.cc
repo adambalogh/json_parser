@@ -9,6 +9,8 @@
 #include "helpers.h"
 #include "token_error.h"
 
+namespace jp {
+
 const char kObjectOpen = '{';
 const char kObjectClose = '}';
 const char kArrayOpen = '[';
@@ -321,4 +323,5 @@ void JsonParser::Expect(const char c) const {
   if (*p_ != c) {
     throw jp::TokenError{GetSurroundings(), quote(c), quote(*p_)};
   }
+}
 }

@@ -5,6 +5,8 @@
 
 #include "json_value.h"
 
+namespace jp {
+
 // Json parser using specification from http://json.org/
 //
 class JsonParser {
@@ -69,3 +71,4 @@ class JsonParser {
   const char* const start_;
   const char* const end_;
 };
+}

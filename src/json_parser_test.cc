@@ -5,8 +5,10 @@
 #include <gtest/gtest.h>
 
 #include "json_parser.h"
+#include "token_error.h"
 
 using namespace ::testing;
+using namespace jp;
 using std::string;
 
 TEST(JsonParser, EmptyJson) {
@@ -76,11 +78,11 @@ TEST(JsonParser, ComplexFromFile) {
 
 TEST(JsonParser, InvalidJson) {
   std::vector<std::string> jsons{"{\"num\": 10, }", "{\"name\" }",
-                                 "{\"name....}"};
+                                 "{\"name....}", "{\"name\"   \"joe\"}"};
   for (const auto& a : jsons) {
     try {
       JsonParser{a}.Parse();
-    } catch (std::runtime_error& e) {
+    } catch (std::exception& e) {
       std::cout << e.what() << std::endl;
     }
   }
