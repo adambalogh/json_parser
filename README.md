@@ -3,6 +3,7 @@
 ## Example Usage
 
 ```c++
+#include <assert.h>
 #include <string>
 
 #include "json_parser.h"
