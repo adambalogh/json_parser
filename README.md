@@ -4,6 +4,7 @@
 
 ```c++
 #include <string>
+
 #include "json_parser.h"
 
 int main() {
@@ -11,7 +12,11 @@ int main() {
 
   JsonValue value = JsonParser{json}.Parse();
   JsonValue::ObjectType person = value.getObject();
+
+  assert(person.at("name").is<JsonValue::STRING>());
   person.at("name").getString();  // == "John"
-  person.at("age").getNumber();   // == 31
+
+  assert(person.at("age").is<JsonValue::NUMBER>());
+  person.at("age").getNumber();  // == 31
 }
 ```
