@@ -77,7 +77,7 @@ TEST(JsonParser, ComplexFromFile) {
 }
 
 TEST(JsonParser, InvalidJson) {
-  std::vector<std::string> jsons{"{\"num\": 10, }", "{\"name\" }",
+  std::vector<std::string> jsons{",", "{\"num\": 10, }", "{\"name\" }",
                                  "{\"name....}", "{\"name\"   \"joe\"}"};
   for (const auto& a : jsons) {
     try {

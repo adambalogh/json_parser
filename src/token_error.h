@@ -13,10 +13,9 @@ class TokenError : public std::exception {
         got_(std::move(got)) {
     std::string what;
     what += surroundings_;
-    what += '\n';
     what += "expected ";
     what += expected_;
-    what += " got ";
+    what += ", got ";
     what += got_;
     what_ = what.c_str();
   }

@@ -34,6 +34,8 @@ const std::string kNull = "null";
 const std::unordered_set<char> following_escape{'"', '\\', '/', 'b',
                                                 'f', 'n',  'r', 't'};
 
+// GetNextControlToken always leaves p_ pointing to the parsed ControlToken,
+// which is always a single char.
 JsonParser::ControlToken JsonParser::GetNextControlToken() {
   SkipSpace();
   if (p_ == end_) {
@@ -91,7 +93,8 @@ JsonValue JsonParser::ParseValue(const ControlToken ct) {
     case NULL_VALUE:
       return ParseNull();
     default:
-      throw std::runtime_error("invalid/unexpected token: " +
+      throw std::runtime_error(GetSurroundings() +
+                               "expected a JSON value, but got token: " +
                                ErrorMessageName(ct));
   }
 }
@@ -257,25 +260,26 @@ void JsonParser::SkipSpace() {
 }
 
 std::string JsonParser::GetSurroundings() const {
-  const long size = 10;
+  const long max_length = 10;
   std::string out;
-  auto move_back = std::min(size, std::distance(start_, p_));
-  const char* s = p_ - move_back;
+  auto prefix_length = std::min(max_length, std::distance(start_, p_));
+  const char* s = p_ - prefix_length;
   for (; s != p_; ++s) {
     out += *s;
   }
   if (p_ != end_) {
     out += *s;
     ++s;
-    for (int i = 0; i < size && s != end_; ++i, ++s) {
+    for (int i = 0; i < max_length && s != end_; ++i, ++s) {
       out += *s;
     }
   }
   out += '\n';
-  for (int i = 0; i < move_back; ++i) {
+  for (int i = 0; i < prefix_length; ++i) {
     out += ' ';
   }
   out += '^';
+  out += '\n';
   return out;
 }
 
@@ -301,8 +305,8 @@ std::string JsonParser::ErrorMessageName(const ControlToken ct) const {
       return quote(':');
     case COMMA:
       return quote(',');
-    default:
-      return "invalid";
+    case INVALID:
+      return quote(*p_);
   }
 }
 
