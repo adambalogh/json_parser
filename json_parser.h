@@ -9,11 +9,13 @@
 //
 class JsonParser {
  public:
-  JsonParser(const char* p, const char* end) : p_(p), end_(end) {}
+  JsonParser(const char* p, const char* end) : p_(p), start_(p), end_(end) {}
 
   JsonParser(const std::string& json)
       : JsonParser(&json[0], &json[0] + json.size()) {}
 
+  // Currently, the outermost value doesn't have to be an object, not as per the
+  // specification
   JsonValue Parse();
 
  private:
@@ -32,6 +34,7 @@ class JsonParser {
     BOOL,          // parse a bool
     NUMBER,        // parse number
     NULL_VALUE,    // parse a null
+    INVALID
   };
 
   JsonValue ParseValue(const ControlToken tk);
@@ -54,6 +57,12 @@ class JsonParser {
 
   inline void AdvanceChar() { ++p_; }
 
+  std::string GetSurroundings() const;
+  void Expect(const char c) const;
+  void Expect(const ControlToken expected, const ControlToken actual) const;
+  std::string ErrorMessageName(const ControlToken ct) const;
+
   const char* p_;
+  const char* const start_;
   const char* const end_;
 };

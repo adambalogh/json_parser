@@ -4,6 +4,9 @@
 #include <cctype>
 #include <unordered_set>
 #include <iostream>
+#include <sstream>
+
+#include "helpers.h"
 
 const char kObjectOpen = '{';
 const char kObjectClose = '}';
@@ -31,6 +34,9 @@ const std::unordered_set<char> following_escape{'"', '\\', '/', 'b',
 
 JsonParser::ControlToken JsonParser::GetNextControlToken() {
   SkipSpace();
+  if (p_ == end_) {
+    throw std::runtime_error("unexpected end of input: " + GetSurroundings());
+  }
   switch (*p_) {
     case kObjectOpen:
       return OBJECT_OPEN;
@@ -55,62 +61,64 @@ JsonParser::ControlToken JsonParser::GetNextControlToken() {
       if (*p_ == kMinusSign || std::isdigit(*p_)) {
         return NUMBER;
       }
-      throw std::runtime_error("invalid " + std::string{*p_});
+      return INVALID;
   }
 }
 
 JsonValue JsonParser::Parse() {
   const auto obj = ParseValue();
   SkipSpace();
-  assert(p_ == end_);
+  if (p_ != end_) {
+    throw std::runtime_error("unexpected string at end");
+  }
   return obj;
 }
 
 JsonValue JsonParser::ParseValue(const ControlToken ct) {
-  if (ct == OBJECT_OPEN) {
-    return JsonValue{ParseObject()};
+  switch (ct) {
+    case OBJECT_OPEN:
+      return JsonValue{ParseObject()};
+    case ARRAY_OPEN:
+      return JsonValue{ParseArray()};
+    case STRING:
+      return JsonValue{ParseString()};
+    case BOOL:
+      return JsonValue{ParseBool()};
+    case NUMBER:
+      return JsonValue{ParseNumber()};
+    case NULL_VALUE:
+      return ParseNull();
+    default:
+      throw std::runtime_error("invalid/unexpected token: " +
+                               ErrorMessageName(ct));
   }
-  if (ct == ARRAY_OPEN) {
-    return JsonValue{ParseArray()};
-  }
-  if (ct == STRING) {
-    return JsonValue{ParseString()};
-  }
-  if (ct == BOOL) {
-    return JsonValue(ParseBool());
-  }
-  if (ct == NUMBER) {
-    return JsonValue{ParseNumber()};
-  }
-  if (ct == NULL_VALUE) {
-    return ParseNull();
-  }
-  throw std::runtime_error("invalid control token");
 }
 
 JsonValue::ObjectType JsonParser::ParseObject() {
   assert(*p_ == kObjectOpen);
   AdvanceChar();
 
-  ControlToken ct = GetNextControlToken();
-
   JsonValue::ObjectType obj;
-  JsonValue::StringType key;
 
-  while (ct != OBJECT_CLOSE) {
-    assert(ct == STRING);
-    key = ParseString();
-    ct = GetNextControlToken();
-    assert(ct == COLON);
-    AdvanceChar();
-    obj.emplace(key, std::move(ParseValue()));
-    ct = GetNextControlToken();
-    if (ct != COMMA) {
-      assert(ct == OBJECT_CLOSE);
-      break;
+  ControlToken ct = GetNextControlToken();
+  if (ct != OBJECT_CLOSE) {
+    JsonValue::StringType key;
+
+    while (true) {
+      Expect(STRING, ct);
+      key = ParseString();
+      ct = GetNextControlToken();
+      Expect(COLON, ct);
+      AdvanceChar();
+      obj.emplace(key, std::move(ParseValue()));
+      ct = GetNextControlToken();
+      if (ct != COMMA) {
+        Expect(OBJECT_CLOSE, ct);
+        break;
+      }
+      AdvanceChar();
+      ct = GetNextControlToken();
     }
-    AdvanceChar();
-    ct = GetNextControlToken();
   }
 
   assert(*p_ == kObjectClose);
@@ -122,19 +130,20 @@ JsonValue::ArrayType JsonParser::ParseArray() {
   assert(*p_ == kArrayOpen);
   AdvanceChar();
 
-  ControlToken ct = GetNextControlToken();
-
   JsonValue::ArrayType arr;
 
-  while (ct != ARRAY_CLOSE) {
-    arr.push_back(ParseValue(ct));
-    ct = GetNextControlToken();
-    if (ct != COMMA) {
-      assert(ct == ARRAY_CLOSE);
-      break;
+  ControlToken ct = GetNextControlToken();
+  if (ct != ARRAY_CLOSE) {
+    while (true) {
+      arr.push_back(ParseValue(ct));
+      ct = GetNextControlToken();
+      if (ct != COMMA) {
+        Expect(ARRAY_CLOSE, ct);
+        break;
+      }
+      AdvanceChar();
+      ct = GetNextControlToken();
     }
-    AdvanceChar();
-    ct = GetNextControlToken();
   }
 
   assert(*p_ == kArrayClose);
@@ -148,13 +157,16 @@ JsonValue::StringType JsonParser::ParseString() {
   AdvanceChar();
 
   const char* const string_start = p_;
-  while (*p_ != kStringClose) {
+  while (p_ != end_ && *p_ != kStringClose) {
     if (*p_ == kEscapeChar) {
       AdvanceChar();
-      assert(following_escape.count(*p_) != 0);
+      if (following_escape.count(*p_) == 0) {
+        throw std::runtime_error("invalid escape char");
+      }
     }
     AdvanceChar();
   }
+  Expect(kStringClose);
 
   JsonValue::StringType str{string_start, p_};
   AdvanceChar();
@@ -168,11 +180,15 @@ JsonValue::NumberType JsonParser::ParseNumber() {
     AdvanceChar();
   }
 
-  assert(std::isdigit(*p_));
+  if (!std::isdigit(*p_)) {
+    throw std::runtime_error("expected number");
+  }
   JsonValue::NumberType num = 0;
 
   if (*p_ == '0') {
-    assert(*(p_ + 1) == kDot);
+    if (*(p_ + 1) != kDot) {
+      throw std::runtime_error("expected '.'");
+    }
     AdvanceChar();
   } else {
     while (std::isdigit(*p_)) {
@@ -232,7 +248,82 @@ bool JsonParser::Match(const std::string& val) {
 }
 
 void JsonParser::SkipSpace() {
-  while (std::isspace(*p_)) {
+  while (std::isspace(*p_) && p_ != end_) {
     AdvanceChar();
+  }
+}
+
+std::string JsonParser::GetSurroundings() const {
+  const long size = 10;
+  std::string out;
+  auto move_back = std::min(size, std::distance(start_, p_));
+  const char* s = p_ - move_back;
+  for (; s != p_; ++s) {
+    out += *s;
+  }
+  if (p_ != end_) {
+    out += *s;
+    ++s;
+    for (int i = 0; i < size && s != end_; ++i, ++s) {
+      out += *s;
+    }
+  }
+  out += '\n';
+  for (int i = 0; i < move_back; ++i) {
+    out += ' ';
+  }
+  out += '^';
+  return out;
+}
+
+std::string JsonParser::ErrorMessageName(const ControlToken ct) const {
+  switch (ct) {
+    case OBJECT_OPEN:
+      return quote('{');
+    case OBJECT_CLOSE:
+      return quote('}');
+    case ARRAY_OPEN:
+      return quote('[');
+    case ARRAY_CLOSE:
+      return quote(']');
+    case STRING:
+      return "a string";
+    case NUMBER:
+      return "a number";
+    case BOOL:
+      return "true or false";
+    case NULL_VALUE:
+      return "null";
+    case COLON:
+      return quote(':');
+    case COMMA:
+      return quote(',');
+    default:
+      return "invalid";
+  }
+}
+
+void JsonParser::Expect(ControlToken expected, ControlToken actual) const {
+  if (actual != expected) {
+    std::stringstream error_msg;
+    error_msg << GetSurroundings() << std::endl << "expected "
+              << ErrorMessageName(expected) << ", got "
+              << ErrorMessageName(actual);
+    throw std::runtime_error(error_msg.str());
+  }
+}
+
+void JsonParser::Expect(const char c) const {
+  if (p_ == end_) {
+    std::stringstream error_msg;
+    error_msg << GetSurroundings() << std::endl << "expected " << quote(c)
+              << ", but reached end of input";
+    throw std::runtime_error(error_msg.str());
+  }
+  if (*p_ != c) {
+    std::stringstream error_msg;
+    error_msg << GetSurroundings() << std::endl << "expected " << quote(c)
+              << ", got " << quote(*p_);
+    throw std::runtime_error(error_msg.str());
   }
 }
