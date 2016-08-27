@@ -1,3 +1,4 @@
+#include <fstream>
 #include <string>
 #include <iostream>
 
@@ -64,6 +65,25 @@ TEST(JsonParser, HandlesWhiteSpace) {
 TEST(JsonParser, InvalidBool) {
   string e = "{\"val\": trio}";
   EXPECT_THROW(JsonParser{e}.Parse(), std::runtime_error);
+}
+
+TEST(JsonParser, ComplexFromFile) {
+  std::ifstream file{"test_data/4.json"};
+  string e((std::istreambuf_iterator<char>(file)),
+           std::istreambuf_iterator<char>());
+  JsonParser{e}.Parse();
+}
+
+TEST(JsonParser, InvalidJson) {
+  std::vector<std::string> jsons{"{\"num\": 10, }", "{\"name\" }",
+                                 "{\"name....}"};
+  for (const auto& a : jsons) {
+    try {
+      JsonParser{a}.Parse();
+    } catch (std::runtime_error& e) {
+      std::cout << e.what() << std::endl;
+    }
+  }
 }
 
 int main(int argc, char** argv) {

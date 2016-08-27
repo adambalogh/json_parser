@@ -28,6 +28,22 @@ class JsonValue {
     return type_ == Type;
   }
 
+  template <int Type>
+  auto get() {
+    switch (Type) {
+      case OBJECT:
+        return getObject();
+      case ARRAY:
+        return getArray();
+      case STRING:
+        return getString();
+      case NUMBER:
+        return getNumber();
+      case BOOL:
+        return getBool();
+    }
+  }
+
   ObjectType getObject() {
     if (type_ != OBJECT) {
       throw std::runtime_error("not an object");
