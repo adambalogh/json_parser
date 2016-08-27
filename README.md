@@ -10,6 +10,8 @@ Under development.
 
 #include "json_parser.h"
 
+using namespace jp;
+
 int main() {
   std::string json = "{\"name\": \"John\", \"age\": 31}";
 
