@@ -55,7 +55,10 @@ class JsonParser {
   // If successful, returns true, and sets p_ past the matched string.
   inline bool Match(const std::string& val);
 
-  inline void AdvanceChar() { ++p_; }
+  inline void AdvanceChar() {
+    assert(p_ != end_);
+    ++p_;
+  }
 
   std::string GetSurroundings() const;
   void Expect(const char c) const;

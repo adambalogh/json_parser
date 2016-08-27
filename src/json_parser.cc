@@ -7,6 +7,7 @@
 #include <sstream>
 
 #include "helpers.h"
+#include "token_error.h"
 
 const char kObjectOpen = '{';
 const char kObjectClose = '}';
@@ -25,7 +26,6 @@ const std::string kTrue = "true";
 const std::string kFalse = "false";
 const std::string kNull = "null";
 
-// TODO replace assertions with exceptions
 // TODO implement parsing of number exponent
 
 // Chars that can follow a backslash in a string
@@ -169,6 +169,7 @@ JsonValue::StringType JsonParser::ParseString() {
   Expect(kStringClose);
 
   JsonValue::StringType str{string_start, p_};
+  assert(*p_ == kStringClose);
   AdvanceChar();
   return str;
 }
@@ -248,7 +249,7 @@ bool JsonParser::Match(const std::string& val) {
 }
 
 void JsonParser::SkipSpace() {
-  while (std::isspace(*p_) && p_ != end_) {
+  while (p_ != end_ && std::isspace(*p_)) {
     AdvanceChar();
   }
 }
@@ -305,11 +306,8 @@ std::string JsonParser::ErrorMessageName(const ControlToken ct) const {
 
 void JsonParser::Expect(ControlToken expected, ControlToken actual) const {
   if (actual != expected) {
-    std::stringstream error_msg;
-    error_msg << GetSurroundings() << std::endl << "expected "
-              << ErrorMessageName(expected) << ", got "
-              << ErrorMessageName(actual);
-    throw std::runtime_error(error_msg.str());
+    throw jp::TokenError{GetSurroundings(), ErrorMessageName(expected),
+                         ErrorMessageName(actual)};
   }
 }
 
@@ -321,9 +319,6 @@ void JsonParser::Expect(const char c) const {
     throw std::runtime_error(error_msg.str());
   }
   if (*p_ != c) {
-    std::stringstream error_msg;
-    error_msg << GetSurroundings() << std::endl << "expected " << quote(c)
-              << ", got " << quote(*p_);
-    throw std::runtime_error(error_msg.str());
+    throw jp::TokenError{GetSurroundings(), quote(c), quote(*p_)};
   }
 }
