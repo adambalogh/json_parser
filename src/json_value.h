@@ -26,24 +26,8 @@ class JsonValue {
   explicit JsonValue() : type_(NULL_VALUE) {}
 
   template <int Type>
-  bool is() {
+  inline bool is() {
     return type_ == Type;
-  }
-
-  template <int Type>
-  auto get() {
-    switch (Type) {
-      case OBJECT:
-        return getObject();
-      case ARRAY:
-        return getArray();
-      case STRING:
-        return getString();
-      case NUMBER:
-        return getNumber();
-      case BOOL:
-        return getBool();
-    }
   }
 
   ObjectType getObject() {
