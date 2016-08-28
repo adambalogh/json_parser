@@ -26,51 +26,52 @@ class JsonValue {
   explicit JsonValue() : type_(NULL_VALUE) {}
 
   template <int Type>
-  inline bool is() {
+  inline bool is() const {
     return type_ == Type;
   }
 
-  ObjectType getObject() {
+  const ObjectType& getObject() const {
     if (type_ != OBJECT) {
       throw std::runtime_error("not an object");
     }
     return obj_;
   }
 
-  ArrayType getArray() {
+  const ArrayType& getArray() const {
     if (type_ != ARRAY) {
       throw std::runtime_error("not an array");
     }
     return arr_;
   }
 
-  StringType getString() {
+  const StringType& getString() const {
     if (type_ != STRING) {
       throw std::runtime_error("not a string");
     }
     return str_;
   }
 
-  NumberType getNumber() {
+  NumberType getNumber() const {
     if (type_ != NUMBER) {
       throw std::runtime_error("not a number");
     }
     return num_;
   }
 
-  BoolType getBool() {
+  BoolType getBool() const {
     if (type_ != BOOL) {
       throw std::runtime_error("not a bool");
     }
     return bool_;
   }
 
-  operator ObjectType() { return getObject(); }
-  operator ArrayType() { return getArray(); }
-  operator StringType() { return getString(); }
-  operator NumberType() { return getNumber(); }
-  operator BoolType() { return getBool(); }
+  operator const ObjectType&() const { return getObject(); }
+  operator const ArrayType&() const { return getArray(); }
+  operator const StringType&() const { return getString(); }
+  operator NumberType() const { return getNumber(); }
+  operator BoolType() const { return getBool(); }
 
+  // Should only be used for debugging
   std::string to_string() const {
     std::string out;
     switch (type_) {
@@ -116,4 +117,6 @@ class JsonValue {
   NumberType num_;
   BoolType bool_;
 };
+
+std::ostream& operator<<(std::ostream& out, const jp::JsonValue& val);
 }
