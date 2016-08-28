@@ -16,8 +16,9 @@ using jp::JsonParser;
 int main() {
   std::string json = "{\"name\": \"John\", \"age\": 31}";
 
-  JsonValue obj = JsonParser{json}.Parse();
-  const auto& person = obj.getObject();
+  JsonValue val = JsonParser{json}.Parse();
+  assert(val.is<JsonValue::OBJECT>());
+  const auto& person = val.getObject();
 
   assert(person.at("name").is<JsonValue::STRING>());
   const std::string& name = person.at("name");  // == "John"
