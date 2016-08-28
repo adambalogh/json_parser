@@ -59,9 +59,15 @@ class JsonParser {
   // If successful, returns true, and sets p_ past the matched string.
   inline bool Match(const std::string& val);
 
-  inline void AdvanceChar() {
-    assert(p_ != end_);
-    ++p_;
+  inline void AdvanceChar() { ++p_; }
+
+  // Returns how many characters are left from the input string, including the
+  // character pointed to by p_
+  inline size_t Capacity() const { return end_ - p_; }
+
+  inline const char GetChar() const {
+    assert(p_ < end_);  // TODO make this an exception
+    return *p_;
   }
 
   std::string GetSurroundings() const;
