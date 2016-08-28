@@ -65,11 +65,16 @@ class JsonParser {
   // character pointed to by p_
   inline size_t Capacity() const { return end_ - p_; }
 
-  inline const char GetChar() const {
+  inline char GetChar() const {
     if (!Capacity()) {
       throw std::runtime_error("unexpected end of input");
     }
     return *p_;
+  }
+
+  inline char GetNextChar() {
+    AdvanceChar();
+    return GetChar();
   }
 
   std::string GetSurroundings() const;

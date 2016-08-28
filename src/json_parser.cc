@@ -21,7 +21,10 @@ const char kColon = ':';
 const char kComma = ',';
 const char kEscapeChar = '\\';
 const char kMinusSign = '-';
+const char kPlusSign = '+';
 const char kDot = '.';
+const char kExponent = 'e';
+const char kCapitalExponent = 'E';
 const std::string kTrue = "true";
 const std::string kFalse = "false";
 const std::string kNull = "null";
@@ -70,7 +73,7 @@ JsonValue JsonParser::Parse() {
   const auto obj = ParseValue();
   SkipSpace();
   if (Capacity()) {
-    throw std::runtime_error("unexpected string at end");
+    throw std::runtime_error("unexpected string at the end of input");
   }
   return obj;
 }
@@ -163,7 +166,8 @@ JsonValue::StringType JsonParser::ParseString() {
   const char* const start = p_;
   char c;
   while ((c = GetChar()) != kStringClose) {
-    // only literal whitespace char allowed inside a string is a space (' ')
+    // only literal whitespace char allowed inside a string is a space,
+    // everything else must be escaped
     if (c != ' ' && std::isspace(c)) {
       throw std::runtime_error(
           GetSurroundings() +
@@ -177,7 +181,6 @@ JsonValue::StringType JsonParser::ParseString() {
     }
     AdvanceChar();
   }
-  Expect(kStringClose);
 
   JsonValue::StringType str{start, p_};
   assert(GetChar() == kStringClose);
@@ -193,6 +196,8 @@ double JsonParser::ParseSimpleNumber() {
   }
   int num = 0;
   char c;
+  // no valid JSON ends with a digit, so it's fine if we just use GetChar, which
+  // throws when we reached the end of input
   while (std::isdigit((c = GetChar()))) {
     num *= 10;
     num += c - '0';
@@ -201,56 +206,59 @@ double JsonParser::ParseSimpleNumber() {
   return num;
 }
 
-// TODO this may lead to undefined behaviour, as p != end_ is not checked
-// everywhere
 JsonValue::NumberType JsonParser::ParseNumber() {
   bool negative = false;
-  if (GetChar() == kMinusSign) {
+  char c = GetChar();
+
+  // parse minus sign, if there is one
+  if (c == kMinusSign) {
     negative = true;
-    AdvanceChar();
+    c = GetNextChar();
   }
-  if (!std::isdigit(GetChar())) {
+
+  if (!std::isdigit(c)) {
     throw std::runtime_error("expected number");
   }
 
   JsonValue::NumberType num = 0;
   if (GetChar() == '0') {
-    if (std::isdigit(*(p_ + 1))) {
+    if (std::isdigit(GetNextChar())) {
       throw std::runtime_error("0 cannot be followed by digits");
     }
-    AdvanceChar();
   } else {
     num = ParseSimpleNumber();
   }
+  c = GetChar();
 
   // Parse fraction, if present
-  if (GetChar() == kDot) {
-    AdvanceChar();
-    if (!std::isdigit(GetChar())) {
+  if (c == kDot) {
+    c = GetNextChar();
+    if (!std::isdigit(c)) {
       throw std::runtime_error(GetSurroundings() +
                                ". must be followed by number");
     }
     int power_of_ten = 0;
     int fraction = 0;
-    while (p_ != end_ && std::isdigit(GetChar())) {
+    while (std::isdigit(c)) {
       fraction *= 10;
-      fraction += GetChar() - '0';
+      fraction += c - '0';
       ++power_of_ten;
-      AdvanceChar();
+      c = GetNextChar();
     }
     num += static_cast<double>(fraction) / pow(10, power_of_ten);
   }
 
   // Parse exponential notation
-  if (GetChar() == 'e' || GetChar() == 'E') {
-    AdvanceChar();
+  if (c == kExponent || c == kCapitalExponent) {
+    c = GetNextChar();
     bool negative_exponential = false;
-    if (!std::isdigit(GetChar())) {
-      if (GetChar() != '+') {
+    if (!std::isdigit(c)) {
+      if (c == kMinusSign) {
         negative_exponential = true;
-        Expect('-');
+      } else {
+        Expect(kPlusSign);
       }
-      AdvanceChar();
+      c = GetNextChar();
     }
 
     int power = ParseSimpleNumber();
@@ -260,6 +268,7 @@ JsonValue::NumberType JsonParser::ParseNumber() {
     num *= pow(10, power);
   }
 
+  assert(!std::isdigit(GetChar()));
   return negative ? num * -1 : num;
 }
 
