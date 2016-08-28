@@ -309,6 +309,7 @@ void JsonParser::SkipSpace() {
   }
 }
 
+// TODO refactor this
 std::string JsonParser::GetSurroundings() const {
   const long max_length = 10;
   std::string out;
@@ -333,6 +334,7 @@ std::string JsonParser::GetSurroundings() const {
   return out;
 }
 
+// TODO move this elsewhere
 std::string JsonParser::ErrorMessageName(const ControlToken ct) const {
   switch (ct) {
     case OBJECT_OPEN:

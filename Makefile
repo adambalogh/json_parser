@@ -1,5 +1,10 @@
-all:
-	g++ -std=c++14 src/json_parser.cc src/json_parser_test.cc -lgtest -lboost_system-mt -lboost_filesystem-mt -o json_parser_test -Wall -Werror
+all: test benchmark_main
 
-benchmark_main: benchmark/main.cc src/json_parser.cc src/json_parser.h
-	g++ -std=c++14 -O3 -DNDEBUG benchmark/main.cc src/json_parser.cc -lbenchmark -o benchmark_main
+test: src/json_parser_test.cc src/json_parser.cc src/json_parser.h src/json_value.h
+	clang++ -std=c++14 src/json_parser.cc src/json_parser_test.cc -lgtest -lboost_system-mt -lboost_filesystem-mt -o json_parser_test -Wall -Werror
+
+benchmark_main: benchmark/main.cc src/json_parser.cc src/json_parser.h src/json_value.h
+	clang++ -std=c++14 -O3 -DNDEBUG benchmark/main.cc src/json_parser.cc -lbenchmark -o benchmark_main
+
+clean:
+	rm benchmark_main json_parser_test
