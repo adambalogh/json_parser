@@ -199,8 +199,8 @@ JsonValue::NumberType JsonParser::ParseNumber() {
   JsonValue::NumberType num = 0;
 
   if (*p_ == '0') {
-    if (*(p_ + 1) != kDot) {
-      throw std::runtime_error("expected '.'");
+    if (std::isdigit(*(p_ + 1))) {
+      throw std::runtime_error("0 cannot be followed by digits");
     }
     AdvanceChar();
   } else {
@@ -212,9 +212,13 @@ JsonValue::NumberType JsonParser::ParseNumber() {
   }
   // Parse fraction, if present
   if (*p_ == kDot) {
+    AdvanceChar();
+    if (!std::isdigit(*p_)) {
+      throw std::runtime_error(GetSurroundings() +
+                               ". must be followed by number");
+    }
     int power_of_ten = 0;
     int fraction = 0;
-    AdvanceChar();
     while (std::isdigit(*p_)) {
       fraction *= 10;
       fraction += *p_ - '0';
@@ -222,6 +226,32 @@ JsonValue::NumberType JsonParser::ParseNumber() {
       AdvanceChar();
     }
     num += static_cast<double>(fraction) / pow(10, power_of_ten);
+  }
+  // Parse exponential notation
+  if (*p_ == 'e' || *p_ == 'E') {
+    AdvanceChar();
+    bool negative = false;
+    if (!std::isdigit(*p_)) {
+      if (*p_ != '+') {
+        negative = true;
+        Expect('-');
+      }
+      AdvanceChar();
+    }
+    if (!std::isdigit(*p_)) {
+      throw std::runtime_error(GetSurroundings() +
+                               "exponent must be followed by number");
+    }
+    int power = 0;
+    while (std::isdigit(*p_)) {
+      power *= 10;
+      power += *p_ - '0';
+      AdvanceChar();
+    }
+    if (negative) {
+      power *= -1;
+    }
+    num *= pow(10, power);
   }
 
   if (negative) {
