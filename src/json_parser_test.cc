@@ -89,11 +89,10 @@ TEST(JsonParser, JsonFailTests) {
     string e((std::istreambuf_iterator<char>(file)),
              std::istreambuf_iterator<char>());
     try {
-      std::cout << ">" << e << std::endl;
       JsonParser{e}.Parse();
+      std::cout << file_entry.path() << std::endl;
       FAIL();
     } catch (std::exception& e) {
-      std::cout << e.what() << std::endl << std::endl;
     }
   }
 }
@@ -108,6 +107,22 @@ TEST(JsonParser, InvalidJson) {
       FAIL();
     } catch (std::exception& e) {
     }
+  }
+}
+
+TEST(JsonParser, NumberParsing) {
+  std::vector<std::pair<std::string, double>> tests{{"-1", -1},
+                                                    {"1", 1},
+                                                    {"0", 0},
+                                                    {"0.1", 0.1},
+                                                    {"1e0", 1},
+                                                    {"1.4e2", 140},
+                                                    {"10e3", 10000},
+                                                    {"-0.12e3", -120}};
+  for (const auto& pair : tests) {
+    std::string json = "{\"num\": " + pair.first + "}";
+    auto obj = JsonParser{json}.Parse().getObject();
+    EXPECT_EQ(obj.at("num").getNumber(), pair.second);
   }
 }
 
