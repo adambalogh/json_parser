@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 #include <string>
+#include <iostream>
 
 namespace jp {
 
@@ -11,16 +12,14 @@ class TokenError : public std::exception {
       : surroundings_(std::move(surroundings)),
         expected_(std::move(expected)),
         got_(std::move(got)) {
-    std::string what;
-    what += surroundings_;
-    what += "expected ";
-    what += expected_;
-    what += ", got ";
-    what += got_;
-    what_ = what.c_str();
+    what_ += surroundings_;
+    what_ += "expected ";
+    what_ += expected_;
+    what_ += ", got ";
+    what_ += got_;
   }
 
-  const char* what() const noexcept { return what_; }
+  const char* what() const noexcept { return what_.c_str(); }
 
   const std::string& expected() const noexcept { return expected_; }
   const std::string& got() const noexcept { return got_; }
@@ -29,6 +28,6 @@ class TokenError : public std::exception {
   const std::string surroundings_;
   const std::string expected_;
   const std::string got_;
-  const char* what_;
+  std::string what_;
 };
 }
