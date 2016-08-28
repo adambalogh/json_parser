@@ -49,6 +49,8 @@ class JsonParser {
   JsonValue::BoolType ParseBool();
   JsonValue ParseNull();
 
+  inline double ParseSimpleNumber();
+
   ControlToken GetNextControlToken();
 
   inline void SkipSpace();

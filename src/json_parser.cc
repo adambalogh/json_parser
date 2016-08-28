@@ -186,6 +186,18 @@ JsonValue::StringType JsonParser::ParseString() {
   return str;
 }
 
+double JsonParser::ParseSimpleNumber() {
+  int num = 0;
+  while (p_ != end_ && std::isdigit(*p_)) {
+    num *= 10;
+    num += *p_ - '0';
+    AdvanceChar();
+  }
+  return num;
+}
+
+// TODO this may lead to undefined behaviour, as p != end_ is not checked
+// everywhere
 JsonValue::NumberType JsonParser::ParseNumber() {
   bool negative = false;
   if (*p_ == kMinusSign) {
@@ -204,11 +216,7 @@ JsonValue::NumberType JsonParser::ParseNumber() {
     }
     AdvanceChar();
   } else {
-    while (std::isdigit(*p_)) {
-      num *= 10;
-      num += *p_ - '0';
-      AdvanceChar();
-    }
+    num = ParseSimpleNumber();
   }
   // Parse fraction, if present
   if (*p_ == kDot) {
@@ -219,7 +227,7 @@ JsonValue::NumberType JsonParser::ParseNumber() {
     }
     int power_of_ten = 0;
     int fraction = 0;
-    while (std::isdigit(*p_)) {
+    while (p_ != end_ && std::isdigit(*p_)) {
       fraction *= 10;
       fraction += *p_ - '0';
       ++power_of_ten;
@@ -242,12 +250,7 @@ JsonValue::NumberType JsonParser::ParseNumber() {
       throw std::runtime_error(GetSurroundings() +
                                "exponent must be followed by number");
     }
-    int power = 0;
-    while (std::isdigit(*p_)) {
-      power *= 10;
-      power += *p_ - '0';
-      AdvanceChar();
-    }
+    int power = ParseSimpleNumber();
     if (negative) {
       power *= -1;
     }
