@@ -232,10 +232,10 @@ JsonValue::NumberType JsonParser::ParseNumber() {
 
 JsonValue::BoolType JsonParser::ParseBool() {
   if (Match(kTrue)) {
-    return JsonValue{true};
+    return true;
   }
   if (Match(kFalse)) {
-    return JsonValue{false};
+    return false;
   }
   throw std::runtime_error("invalid bool value");
 }
