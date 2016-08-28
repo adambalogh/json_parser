@@ -29,6 +29,7 @@ const std::string kFalse = "false";
 const std::string kNull = "null";
 
 // TODO implement parsing of number exponent
+// TODO handle too deep JSONs
 
 // Chars that can follow a backslash in a string
 const std::unordered_set<char> following_escape{'"', '\\', '/', 'b',
@@ -39,7 +40,7 @@ const std::unordered_set<char> following_escape{'"', '\\', '/', 'b',
 JsonParser::ControlToken JsonParser::GetNextControlToken() {
   SkipSpace();
   if (p_ == end_) {
-    throw std::runtime_error("unexpected end of input: " + GetSurroundings());
+    throw std::runtime_error(GetSurroundings() + "unexpected end of input");
   }
   switch (*p_) {
     case kObjectOpen:
@@ -163,6 +164,11 @@ JsonValue::StringType JsonParser::ParseString() {
 
   const char* const string_start = p_;
   while (p_ != end_ && *p_ != kStringClose) {
+    if (*p_ != ' ' && std::isspace(*p_)) {
+      throw std::runtime_error(
+          GetSurroundings() +
+          "literal whitespace chars are not allowed in JSON");
+    }
     if (*p_ == kEscapeChar) {
       AdvanceChar();
       if (following_escape.count(*p_) == 0) {
