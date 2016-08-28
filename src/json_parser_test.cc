@@ -126,6 +126,17 @@ TEST(JsonParser, NumberParsing) {
   }
 }
 
+TEST(JsonParser, InvalidNumberParsing) {
+  std::vector<std::string> jsons = {"{\"a\": 1", "{\"a\": 1."};
+
+  for (const auto& json : jsons) {
+    try {
+      auto obj = JsonParser{json}.Parse().getObject();
+      FAIL();
+    } catch (std::exception& e) {
+    }
+  }
+}
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

@@ -66,7 +66,9 @@ class JsonParser {
   inline size_t Capacity() const { return end_ - p_; }
 
   inline const char GetChar() const {
-    assert(p_ < end_);  // TODO make this an exception
+    if (!Capacity()) {
+      throw std::runtime_error("unexpected end of input");
+    }
     return *p_;
   }
 

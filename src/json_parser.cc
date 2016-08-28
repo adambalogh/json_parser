@@ -17,8 +17,6 @@ const char kArrayOpen = '[';
 const char kArrayClose = ']';
 const char kStringOpen = '"';
 const char kStringClose = '"';
-const char kDoubleQuote = '"';
-const char kWhitespace = ' ';
 const char kColon = ':';
 const char kComma = ',';
 const char kEscapeChar = '\\';
@@ -39,10 +37,8 @@ const std::unordered_set<char> following_escape{'"', '\\', '/', 'b',
 // which is always a single char.
 JsonParser::ControlToken JsonParser::GetNextControlToken() {
   SkipSpace();
-  if (p_ == end_) {
-    throw std::runtime_error(GetSurroundings() + "unexpected end of input");
-  }
-  switch (*p_) {
+  const auto c = GetChar();
+  switch (c) {
     case kObjectOpen:
       return OBJECT_OPEN;
     case kObjectClose:
@@ -63,7 +59,7 @@ JsonParser::ControlToken JsonParser::GetNextControlToken() {
     case 'n':
       return NULL_VALUE;
     default:
-      if (*p_ == kMinusSign || std::isdigit(*p_)) {
+      if (c == kMinusSign || std::isdigit(c)) {
         return NUMBER;
       }
       return INVALID;
@@ -73,7 +69,7 @@ JsonParser::ControlToken JsonParser::GetNextControlToken() {
 JsonValue JsonParser::Parse() {
   const auto obj = ParseValue();
   SkipSpace();
-  if (p_ != end_) {
+  if (Capacity()) {
     throw std::runtime_error("unexpected string at end");
   }
   return obj;
@@ -101,7 +97,7 @@ JsonValue JsonParser::ParseValue(const ControlToken ct) {
 }
 
 JsonValue::ObjectType JsonParser::ParseObject() {
-  assert(*p_ == kObjectOpen);
+  assert(GetChar() == kObjectOpen);
   AdvanceChar();
 
   JsonValue::ObjectType obj;
@@ -113,10 +109,12 @@ JsonValue::ObjectType JsonParser::ParseObject() {
     while (true) {
       Expect(STRING, ct);
       key = ParseString();
+
       ct = GetNextControlToken();
       Expect(COLON, ct);
       AdvanceChar();
-      obj.emplace(key, std::move(ParseValue()));
+
+      obj.emplace(key, ParseValue());
       ct = GetNextControlToken();
       if (ct != COMMA) {
         Expect(OBJECT_CLOSE, ct);
@@ -127,13 +125,13 @@ JsonValue::ObjectType JsonParser::ParseObject() {
     }
   }
 
-  assert(*p_ == kObjectClose);
+  assert(GetChar() == kObjectClose);
   AdvanceChar();
   return obj;
 }
 
 JsonValue::ArrayType JsonParser::ParseArray() {
-  assert(*p_ == kArrayOpen);
+  assert(GetChar() == kArrayOpen);
   AdvanceChar();
 
   JsonValue::ArrayType arr;
@@ -152,27 +150,28 @@ JsonValue::ArrayType JsonParser::ParseArray() {
     }
   }
 
-  assert(*p_ == kArrayClose);
+  assert(GetChar() == kArrayClose);
   AdvanceChar();
   return arr;
 }
 
 // TODO this doesn't handle UTF-8 and some other edge cases
 JsonValue::StringType JsonParser::ParseString() {
-  assert(*p_ == kStringOpen);
+  assert(GetChar() == kStringOpen);
   AdvanceChar();
 
-  const char* const string_start = p_;
-  while (p_ != end_ && *p_ != kStringClose) {
+  const char* const start = p_;
+  char c;
+  while ((c = GetChar()) != kStringClose) {
     // only literal whitespace char allowed inside a string is a space (' ')
-    if (*p_ != ' ' && std::isspace(*p_)) {
+    if (c != ' ' && std::isspace(c)) {
       throw std::runtime_error(
           GetSurroundings() +
           "literal whitespace chars are not allowed inside JSON string");
     }
-    if (*p_ == kEscapeChar) {
+    if (c == kEscapeChar) {
       AdvanceChar();
-      if (following_escape.count(*p_) == 0) {
+      if (following_escape.count(GetChar()) == 0) {
         throw std::runtime_error(GetSurroundings() + "invalid escape char");
       }
     }
@@ -180,17 +179,23 @@ JsonValue::StringType JsonParser::ParseString() {
   }
   Expect(kStringClose);
 
-  JsonValue::StringType str{string_start, p_};
-  assert(*p_ == kStringClose);
+  JsonValue::StringType str{start, p_};
+  assert(GetChar() == kStringClose);
   AdvanceChar();
   return str;
 }
 
+// Only call this method if it is expected that we can parse a number with at
+// least 1 digit
 double JsonParser::ParseSimpleNumber() {
+  if (!std::isdigit(GetChar())) {
+    throw std::runtime_error(GetSurroundings() + "expected a number");
+  }
   int num = 0;
-  while (p_ != end_ && std::isdigit(*p_)) {
+  char c;
+  while (std::isdigit((c = GetChar()))) {
     num *= 10;
-    num += *p_ - '0';
+    num += c - '0';
     AdvanceChar();
   }
   return num;
@@ -200,17 +205,16 @@ double JsonParser::ParseSimpleNumber() {
 // everywhere
 JsonValue::NumberType JsonParser::ParseNumber() {
   bool negative = false;
-  if (*p_ == kMinusSign) {
+  if (GetChar() == kMinusSign) {
     negative = true;
     AdvanceChar();
   }
-
-  if (!std::isdigit(*p_)) {
+  if (!std::isdigit(GetChar())) {
     throw std::runtime_error("expected number");
   }
-  JsonValue::NumberType num = 0;
 
-  if (*p_ == '0') {
+  JsonValue::NumberType num = 0;
+  if (GetChar() == '0') {
     if (std::isdigit(*(p_ + 1))) {
       throw std::runtime_error("0 cannot be followed by digits");
     }
@@ -218,49 +222,45 @@ JsonValue::NumberType JsonParser::ParseNumber() {
   } else {
     num = ParseSimpleNumber();
   }
+
   // Parse fraction, if present
-  if (*p_ == kDot) {
+  if (GetChar() == kDot) {
     AdvanceChar();
-    if (!std::isdigit(*p_)) {
+    if (!std::isdigit(GetChar())) {
       throw std::runtime_error(GetSurroundings() +
                                ". must be followed by number");
     }
     int power_of_ten = 0;
     int fraction = 0;
-    while (p_ != end_ && std::isdigit(*p_)) {
+    while (p_ != end_ && std::isdigit(GetChar())) {
       fraction *= 10;
-      fraction += *p_ - '0';
+      fraction += GetChar() - '0';
       ++power_of_ten;
       AdvanceChar();
     }
     num += static_cast<double>(fraction) / pow(10, power_of_ten);
   }
+
   // Parse exponential notation
-  if (*p_ == 'e' || *p_ == 'E') {
+  if (GetChar() == 'e' || GetChar() == 'E') {
     AdvanceChar();
-    bool negative = false;
-    if (!std::isdigit(*p_)) {
-      if (*p_ != '+') {
-        negative = true;
+    bool negative_exponential = false;
+    if (!std::isdigit(GetChar())) {
+      if (GetChar() != '+') {
+        negative_exponential = true;
         Expect('-');
       }
       AdvanceChar();
     }
-    if (!std::isdigit(*p_)) {
-      throw std::runtime_error(GetSurroundings() +
-                               "exponent must be followed by number");
-    }
+
     int power = ParseSimpleNumber();
-    if (negative) {
+    if (negative_exponential) {
       power *= -1;
     }
     num *= pow(10, power);
   }
 
-  if (negative) {
-    num *= -1;
-  }
-  return num;
+  return negative ? num * -1 : num;
 }
 
 JsonValue::BoolType JsonParser::ParseBool() {
@@ -290,11 +290,12 @@ bool JsonParser::Match(const std::string& val) {
     }
   }
   p_ += val.size();
+  assert(Capacity());
   return true;
 }
 
 void JsonParser::SkipSpace() {
-  while (p_ != end_ && std::isspace(*p_)) {
+  while (p_ != end_ && std::isspace(GetChar())) {
     AdvanceChar();
   }
 }
@@ -364,7 +365,7 @@ void JsonParser::Expect(const char c) const {
               << ", but reached end of input";
     throw std::runtime_error(error_msg.str());
   }
-  if (*p_ != c) {
+  if (GetChar() != c) {
     throw jp::TokenError{GetSurroundings(), quote(c), quote(*p_)};
   }
 }
