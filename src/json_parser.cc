@@ -164,15 +164,16 @@ JsonValue::StringType JsonParser::ParseString() {
 
   const char* const string_start = p_;
   while (p_ != end_ && *p_ != kStringClose) {
+    // only literal whitespace char allowed inside a string is a space (' ')
     if (*p_ != ' ' && std::isspace(*p_)) {
       throw std::runtime_error(
           GetSurroundings() +
-          "literal whitespace chars are not allowed in JSON");
+          "literal whitespace chars are not allowed inside JSON string");
     }
     if (*p_ == kEscapeChar) {
       AdvanceChar();
       if (following_escape.count(*p_) == 0) {
-        throw std::runtime_error("invalid escape char");
+        throw std::runtime_error(GetSurroundings() + "invalid escape char");
       }
     }
     AdvanceChar();
