@@ -1,6 +1,7 @@
 #include <fstream>
 #include <string>
 #include <iostream>
+#include <boost/filesystem.hpp>
 
 #include <gtest/gtest.h>
 
@@ -69,21 +70,43 @@ TEST(JsonParser, InvalidBool) {
   EXPECT_THROW(JsonParser{e}.Parse(), std::runtime_error);
 }
 
-TEST(JsonParser, ComplexFromFile) {
-  std::ifstream file{"test_data/4.json"};
-  string e((std::istreambuf_iterator<char>(file)),
-           std::istreambuf_iterator<char>());
-  JsonParser{e}.Parse();
+TEST(JsonParser, JsonOrgTests) {
+  boost::filesystem::path test_dir("test_data/json.org");
+  assert(boost::filesystem::is_directory(test_dir));
+  for (auto& file_entry : boost::filesystem::directory_iterator(test_dir)) {
+    std::ifstream file{file_entry.path().generic_string()};
+    string e((std::istreambuf_iterator<char>(file)),
+             std::istreambuf_iterator<char>());
+    JsonParser{e}.Parse();
+  }
+}
+
+TEST(JsonParser, JsonFailTests) {
+  boost::filesystem::path test_dir("test_data/json_tests");
+  assert(boost::filesystem::is_directory(test_dir));
+  for (auto& file_entry : boost::filesystem::directory_iterator(test_dir)) {
+    std::ifstream file{file_entry.path().generic_string()};
+    string e((std::istreambuf_iterator<char>(file)),
+             std::istreambuf_iterator<char>());
+    try {
+      std::cout << ">" << e << std::endl;
+      JsonParser{e}.Parse();
+      FAIL();
+    } catch (std::exception& e) {
+      std::cout << e.what() << std::endl << std::endl;
+    }
+  }
 }
 
 TEST(JsonParser, InvalidJson) {
-  std::vector<std::string> jsons{",", "{\"num\": 10, }", "{\"name\" }",
-                                 "{\"name....}", "{\"name\"   \"joe\"}"};
+  std::vector<std::string> jsons{
+      ",", "{\"a\":[ :}", "{\"num\": 10, }", "{\"name\" }", "{\"name....}",
+      "{\"name\"   \"joe\"}", "{\"Illegal expression\": 1 + 2}"};
   for (const auto& a : jsons) {
     try {
       JsonParser{a}.Parse();
+      FAIL();
     } catch (std::exception& e) {
-      std::cout << e.what() << std::endl;
     }
   }
 }
