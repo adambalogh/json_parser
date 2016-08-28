@@ -51,14 +51,14 @@ class JsonValue {
     return str_;
   }
 
-  const NumberType& getNumber() const {
+  NumberType getNumber() const {
     if (type_ != NUMBER) {
       throw std::runtime_error("not a number");
     }
     return num_;
   }
 
-  const BoolType& getBool() const {
+  BoolType getBool() const {
     if (type_ != BOOL) {
       throw std::runtime_error("not a bool");
     }
@@ -68,9 +68,7 @@ class JsonValue {
   operator const ObjectType&() const { return getObject(); }
   operator const ArrayType&() const { return getArray(); }
   operator const StringType&() const { return getString(); }
-  operator const NumberType&() const { return getNumber(); }
   operator NumberType() const { return getNumber(); }
-  operator const BoolType&() const { return getBool(); }
   operator BoolType() const { return getBool(); }
 
   // Should only be used for debugging
