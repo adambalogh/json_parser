@@ -117,6 +117,4 @@ class JsonValue {
   NumberType num_;
   BoolType bool_;
 };
-
-std::ostream& operator<<(std::ostream& out, const jp::JsonValue& val);
 }
