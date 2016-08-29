@@ -111,6 +111,7 @@ class JsonValue {
  private:
   const Type type_;
 
+  // TODO use an union here
   ObjectType obj_;
   ArrayType arr_;
   StringType str_;
