@@ -118,7 +118,10 @@ TEST(JsonParser, NumberParsing) {
                                                     {"1e0", 1},
                                                     {"1.4e2", 140},
                                                     {"10e3", 10000},
-                                                    {"-0.12e3", -120}};
+                                                    {"10e+3", 10000},
+                                                    {"10E+3", 10000},
+                                                    {"-0.12e3", -120},
+                                                    {"1e-2", 0.01}};
   for (const auto& pair : tests) {
     std::string json = "{\"num\": " + pair.first + "}";
     auto obj = JsonParser{json}.Parse().getObject();
