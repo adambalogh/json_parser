@@ -158,7 +158,8 @@ JsonValue::ArrayType JsonParser::ParseArray() {
   return arr;
 }
 
-// TODO this doesn't handle UTF-8 and some other edge cases
+// TODO this doesn't handle UTF-8
+// TODO replace escaped chars with literal chars
 JsonValue::StringType JsonParser::ParseString() {
   assert(GetChar() == kStringOpen);
   AdvanceChar();
@@ -174,8 +175,8 @@ JsonValue::StringType JsonParser::ParseString() {
           "literal whitespace chars are not allowed inside JSON string");
     }
     if (c == kEscapeChar) {
-      AdvanceChar();
-      if (following_escape.count(GetChar()) == 0) {
+      c = GetNextChar();
+      if (following_escape.count(c) == 0) {
         throw std::runtime_error(GetSurroundings() + "invalid escape char");
       }
     }
