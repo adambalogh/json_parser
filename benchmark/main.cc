@@ -5,24 +5,33 @@
 
 #include "../src/json_parser.h"
 #include "nlohmann/json.hpp"
+#include "rapidjson/document.h"
 
-static std::ifstream file("test_data/json.org/1.json");
+static std::ifstream file("test_data/benchmark/twitter.json");
 static const std::string e((std::istreambuf_iterator<char>(file)),
                            std::istreambuf_iterator<char>());
 
 static void jpParse(benchmark::State& state) {
   while (state.KeepRunning()) {
-    auto val = jp::JsonParser{e}.Parse();
+    jp::JsonParser{e}.Parse();
   }
 }
 
 static void nlohmannParse(benchmark::State& state) {
   while (state.KeepRunning()) {
-    auto val = nlohmann::json::parse(e);
+    nlohmann::json::parse(e);
+  }
+}
+
+static void rapidjsonParse(benchmark::State& state) {
+  while (state.KeepRunning()) {
+    rapidjson::Document d;
+    d.Parse(e.c_str());
   }
 }
 
 BENCHMARK(jpParse);
 BENCHMARK(nlohmannParse);
+BENCHMARK(rapidjsonParse);
 
 BENCHMARK_MAIN();
