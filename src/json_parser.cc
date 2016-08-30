@@ -70,7 +70,7 @@ JsonParser::ControlToken JsonParser::GetNextControlToken() {
 }
 
 JsonValue JsonParser::Parse() {
-  const auto obj = ParseValue();
+  auto obj = ParseValue();
   SkipSpace();
   if (Capacity()) {
     throw std::runtime_error("unexpected string at the end of input");
@@ -117,7 +117,7 @@ JsonValue::ObjectType JsonParser::ParseObject() {
       Expect(COLON, ct);
       AdvanceChar();
 
-      obj.emplace(key, ParseValue());
+      obj.emplace(std::make_pair(key, ParseValue()));
       ct = GetNextControlToken();
       if (ct != COMMA) {
         Expect(OBJECT_CLOSE, ct);

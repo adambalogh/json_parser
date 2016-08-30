@@ -1,16 +1,19 @@
 #pragma once
 
 #include <assert.h>
+#include <cinttypes>
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+#include <iostream>
 
 namespace jp {
 
 // TODO do this with templates
 class JsonValue {
  public:
-  enum Type { OBJECT, ARRAY, STRING, NUMBER, BOOL, NULL_VALUE };
+  enum Type : int8_t { OBJECT, ARRAY, STRING, NUMBER, BOOL, NULL_VALUE };
 
   using ObjectType = std::unordered_map<std::string, JsonValue>;
   using ArrayType = std::vector<JsonValue>;
