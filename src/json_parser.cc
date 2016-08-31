@@ -62,7 +62,7 @@ JsonParser::ControlToken JsonParser::GetNextControlToken() {
     case 'n':
       return NULL_VALUE;
     default:
-      if (c == kMinusSign || std::isdigit(c)) {
+      if (std::isdigit(c) || c == kMinusSign) {
         return NUMBER;
       }
       return INVALID;

@@ -24,7 +24,7 @@ class JsonValue {
   explicit JsonValue(ObjectType obj) : type_(OBJECT), obj_(std::move(obj)) {}
   explicit JsonValue(ArrayType arr) : type_(ARRAY), arr_(std::move(arr)) {}
   explicit JsonValue(StringType str) : type_(STRING), str_(std::move(str)) {}
-  explicit JsonValue(NumberType num) : type_(NUMBER), num_(std::move(num)) {}
+  explicit JsonValue(NumberType num) : type_(NUMBER), num_(num) {}
   explicit JsonValue(BoolType val) : type_(BOOL), bool_(val) {}
   explicit JsonValue() : type_(NULL_VALUE) {}
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cinttypes>
 #include <string>
 #include <unordered_map>
 
@@ -25,7 +26,7 @@ class JsonParser {
   //
   // E.g. on receiving an OBJECT_OPEN, it will start parsing
   // a json object.
-  enum ControlToken {
+  enum ControlToken : int8_t {
     OBJECT_OPEN,   // start parsing object
     OBJECT_CLOSE,  // stop parsing object
     ARRAY_OPEN,    // start parsing array
@@ -77,9 +78,11 @@ class JsonParser {
     return GetChar();
   }
 
+  inline void Expect(const char c) const;
+  inline void Expect(const ControlToken expected,
+                     const ControlToken actual) const;
+
   std::string GetSurroundings() const;
-  void Expect(const char c) const;
-  void Expect(const ControlToken expected, const ControlToken actual) const;
   std::string ErrorMessageName(const ControlToken ct) const;
 
   const char* p_;
