@@ -25,6 +25,7 @@ const char kPlusSign = '+';
 const char kDot = '.';
 const char kExponent = 'e';
 const char kCapitalExponent = 'E';
+
 const std::string kTrue = "true";
 const std::string kFalse = "false";
 const std::string kNull = "null";
@@ -36,6 +37,15 @@ const std::string kNull = "null";
 const std::unordered_set<char> following_escape{'"', '\\', '/', 'b',
                                                 'f', 'n',  'r', 't'};
 
+const std::unordered_map<char, char> escaped_map{{'"', '"'},
+                                                 {'\\', '\\'},
+                                                 {'/', '/'},
+                                                 {'b', '\b'},
+                                                 {'f', '\f'},
+                                                 {'n', '\n'},
+                                                 {'r', '\r'},
+                                                 {'t', '\t'}};
+
 // GetNextControlToken always leaves p_ pointing to the parsed ControlToken,
 // which is always a single char.
 JsonParser::ControlToken JsonParser::GetNextControlToken() {
@@ -43,29 +53,29 @@ JsonParser::ControlToken JsonParser::GetNextControlToken() {
   const auto c = GetChar();
   switch (c) {
     case kObjectOpen:
-      return OBJECT_OPEN;
+      return ControlToken::OBJECT_OPEN;
     case kObjectClose:
-      return OBJECT_CLOSE;
+      return ControlToken::OBJECT_CLOSE;
     case kArrayOpen:
-      return ARRAY_OPEN;
+      return ControlToken::ARRAY_OPEN;
     case kArrayClose:
-      return ARRAY_CLOSE;
+      return ControlToken::ARRAY_CLOSE;
     case kComma:
-      return COMMA;
+      return ControlToken::COMMA;
     case kStringOpen:
-      return STRING;
+      return ControlToken::STRING;
     case kColon:
-      return COLON;
+      return ControlToken::COLON;
     case 't':
     case 'f':
-      return BOOL;
+      return ControlToken::BOOL;
     case 'n':
-      return NULL_VALUE;
+      return ControlToken::NULL_VALUE;
     default:
       if (std::isdigit(c) || c == kMinusSign) {
-        return NUMBER;
+        return ControlToken::NUMBER;
       }
-      return INVALID;
+      return ControlToken::INVALID;
   }
 }
 
@@ -80,17 +90,17 @@ JsonValue JsonParser::Parse() {
 
 JsonValue JsonParser::ParseValue(const ControlToken ct) {
   switch (ct) {
-    case OBJECT_OPEN:
+    case ControlToken::OBJECT_OPEN:
       return JsonValue{ParseObject()};
-    case ARRAY_OPEN:
+    case ControlToken::ARRAY_OPEN:
       return JsonValue{ParseArray()};
-    case STRING:
+    case ControlToken::STRING:
       return JsonValue{ParseString()};
-    case BOOL:
+    case ControlToken::BOOL:
       return JsonValue{ParseBool()};
-    case NUMBER:
+    case ControlToken::NUMBER:
       return JsonValue{ParseNumber()};
-    case NULL_VALUE:
+    case ControlToken::NULL_VALUE:
       return ParseNull();
     default:
       throw std::runtime_error(GetSurroundings() +
@@ -106,21 +116,21 @@ JsonValue::ObjectType JsonParser::ParseObject() {
   JsonValue::ObjectType obj;
 
   ControlToken ct = GetNextControlToken();
-  if (ct != OBJECT_CLOSE) {
+  if (ct != ControlToken::OBJECT_CLOSE) {
     JsonValue::StringType key;
 
     while (true) {
-      Expect(STRING, ct);
+      Expect(ControlToken::STRING, ct);
       key = ParseString();
 
       ct = GetNextControlToken();
-      Expect(COLON, ct);
+      Expect(ControlToken::COLON, ct);
       AdvanceChar();
 
       obj.emplace(std::make_pair(key, ParseValue()));
       ct = GetNextControlToken();
-      if (ct != COMMA) {
-        Expect(OBJECT_CLOSE, ct);
+      if (ct != ControlToken::COMMA) {
+        Expect(ControlToken::OBJECT_CLOSE, ct);
         break;
       }
       AdvanceChar();
@@ -140,12 +150,12 @@ JsonValue::ArrayType JsonParser::ParseArray() {
   JsonValue::ArrayType arr;
 
   ControlToken ct = GetNextControlToken();
-  if (ct != ARRAY_CLOSE) {
+  if (ct != ControlToken::ARRAY_CLOSE) {
     while (true) {
       arr.push_back(ParseValue(ct));
       ct = GetNextControlToken();
-      if (ct != COMMA) {
-        Expect(ARRAY_CLOSE, ct);
+      if (ct != ControlToken::COMMA) {
+        Expect(ControlToken::ARRAY_CLOSE, ct);
         break;
       }
       AdvanceChar();
@@ -159,13 +169,14 @@ JsonValue::ArrayType JsonParser::ParseArray() {
 }
 
 // TODO this doesn't handle UTF-8
-// TODO replace escaped chars with literal chars
 JsonValue::StringType JsonParser::ParseString() {
   assert(GetChar() == kStringOpen);
   AdvanceChar();
 
   const char* const start = p_;
   char c;
+
+  int num_escaped_chars = 0;
   while ((c = GetChar()) != kStringClose) {
     // only literal whitespace char allowed inside a string is a space,
     // everything else must be escaped
@@ -179,12 +190,28 @@ JsonValue::StringType JsonParser::ParseString() {
       if (following_escape.count(c) == 0) {
         throw std::runtime_error(GetSurroundings() + "invalid escape char");
       }
+      ++num_escaped_chars;
     }
     AdvanceChar();
   }
 
-  JsonValue::StringType str{start, p_};
+  JsonValue::StringType str;
+  str.resize(p_ - start - num_escaped_chars);
+
+  int i = 0;
+  for (const char* c = start; c != p_; ++c) {
+    if (*c == kEscapeChar) {
+      ++c;
+      str[i] = escaped_map.at(*c);
+    } else {
+      str[i] = *c;
+    }
+    ++i;
+  }
+
+  assert(i == str.size());
   assert(GetChar() == kStringClose);
+
   AdvanceChar();
   return str;
 }
@@ -338,27 +365,27 @@ std::string JsonParser::GetSurroundings() const {
 // TODO move this elsewhere
 std::string JsonParser::ErrorMessageName(const ControlToken ct) const {
   switch (ct) {
-    case OBJECT_OPEN:
+    case ControlToken::OBJECT_OPEN:
       return quote('{');
-    case OBJECT_CLOSE:
+    case ControlToken::OBJECT_CLOSE:
       return quote('}');
-    case ARRAY_OPEN:
+    case ControlToken::ARRAY_OPEN:
       return quote('[');
-    case ARRAY_CLOSE:
+    case ControlToken::ARRAY_CLOSE:
       return quote(']');
-    case STRING:
+    case ControlToken::STRING:
       return "a string";
-    case NUMBER:
+    case ControlToken::NUMBER:
       return "a number";
-    case BOOL:
+    case ControlToken::BOOL:
       return "true or false";
-    case NULL_VALUE:
+    case ControlToken::NULL_VALUE:
       return "null";
-    case COLON:
+    case ControlToken::COLON:
       return quote(':');
-    case COMMA:
+    case ControlToken::COMMA:
       return quote(',');
-    case INVALID:
+    case ControlToken::INVALID:
       return quote(*p_);
   }
 }

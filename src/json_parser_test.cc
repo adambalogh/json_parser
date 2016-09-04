@@ -51,10 +51,12 @@ TEST(JsonParser, Complex) {
 }
 
 TEST(JsonParser, StringEscape) {
-  std::vector<string> test_cases{"\\\\", "\\\""};
+  std::vector<std::pair<std::string, std::string>> test_cases{
+      {"\\\\", "\\"}, {"jo\\ni", "jo\ni"}};
   for (auto& t : test_cases) {
-    std::string json = "{\"name\":\"" + t + "\"}";
-    EXPECT_EQ(t, JsonParser{json}.Parse().getObject().at("name").getString());
+    std::string json = "{\"name\":\"" + t.first + "\"}";
+    EXPECT_EQ(t.second,
+              JsonParser{json}.Parse().getObject().at("name").getString());
   }
 }
 

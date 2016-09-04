@@ -26,7 +26,7 @@ class JsonParser {
   //
   // E.g. on receiving an OBJECT_OPEN, it will start parsing
   // a json object.
-  enum ControlToken : int8_t {
+  enum class ControlToken : int8_t {
     OBJECT_OPEN,   // start parsing object
     OBJECT_CLOSE,  // stop parsing object
     ARRAY_OPEN,    // start parsing array
