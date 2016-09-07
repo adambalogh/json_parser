@@ -8,6 +8,19 @@
 #include "cpprest/json.h"
 #include "json/json.h"
 
+/* Results:
+ *
+ * Run on (8 X 1000 MHz CPU s)
+ * 2016-09-07 23:38:11
+ * Benchmark       Time(ns)    CPU(ns) Iterations
+ * ----------------------------------------------
+ * jpParse          8256589    8199881         84
+ * nlohmannParse   15699699   15655044         45
+ * cppRestParse     7834885    7831289         83
+ * jsonCppParse    13401031   13382741         54
+ *
+ */
+
 static std::ifstream file("test_data/benchmark/twitter.json");
 static const std::string e((std::istreambuf_iterator<char>(file)),
                            std::istreambuf_iterator<char>());
@@ -24,7 +37,7 @@ static void nlohmannParse(benchmark::State& state) {
   }
 }
 
-static void cppRestParse(benchmark::State& state) {
+static void microsoftCppRestParse(benchmark::State& state) {
   while (state.KeepRunning()) {
     web::json::value::parse(e);
   }
@@ -40,19 +53,7 @@ static void jsonCppParse(benchmark::State& state) {
 
 BENCHMARK(jpParse);
 BENCHMARK(nlohmannParse);
-BENCHMARK(cppRestParse);
+BENCHMARK(microsoftCppRestParse);
 BENCHMARK(jsonCppParse);
 
-/* Results:
- *
- * Run on (8 X 1000 MHz CPU s)
- * 2016-09-07 23:38:11
- * Benchmark       Time(ns)    CPU(ns) Iterations
- * ----------------------------------------------
- * jpParse          8256589    8199881         84
- * nlohmannParse   15699699   15655044         45
- * cppRestParse     7834885    7831289         83
- * jsonCppParse    13401031   13382741         54
- *
- */
 BENCHMARK_MAIN();
