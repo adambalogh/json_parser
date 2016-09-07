@@ -1,6 +1,6 @@
 #C++ Json Parser
 
-Under development.
+Easy to use library for parsing JSON.
 
 ## Example Usage
 
