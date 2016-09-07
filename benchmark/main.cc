@@ -23,7 +23,7 @@
  *
  */
 
-// file contains lot of numbers
+// file's size is 1.7 MB and it contains lot of numbers
 static std::ifstream file("test_data/benchmark/citm_catalog.json");
 static const std::string e((std::istreambuf_iterator<char>(file)),
                            std::istreambuf_iterator<char>());
