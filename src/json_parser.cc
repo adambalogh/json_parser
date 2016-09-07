@@ -30,8 +30,8 @@ const std::string kTrue = "true";
 const std::string kFalse = "false";
 const std::string kNull = "null";
 
-// TODO implement parsing of number exponent
 // TODO handle too deep JSONs
+// TODO implement UTF8 handling
 
 // Chars that can follow a backslash in a string
 const std::unordered_set<char> following_escape{'"', '\\', '/', 'b',
@@ -168,7 +168,6 @@ JsonValue::ArrayType JsonParser::ParseArray() {
   return arr;
 }
 
-// TODO this doesn't handle UTF-8
 JsonValue::StringType JsonParser::ParseString() {
   assert(GetChar() == kStringOpen);
   AdvanceChar();
@@ -337,20 +336,23 @@ void JsonParser::SkipSpace() {
   }
 }
 
-// TODO refactor this
+// TODO move this logic somewhere else
 std::string JsonParser::GetSurroundings() const {
-  const long max_length = 10;
+  const long max_extension_length = 10;
+  auto prefix_length =
+      std::min(max_extension_length, std::distance(start_, p_));
+  const char* current = p_ - prefix_length;
+
   std::string out;
-  auto prefix_length = std::min(max_length, std::distance(start_, p_));
-  const char* s = p_ - prefix_length;
-  for (; s != p_; ++s) {
-    out += *s;
+  for (; current != p_; ++current) {
+    out += *current;
   }
   if (p_ != end_) {
-    out += *s;
-    ++s;
-    for (int i = 0; i < max_length && s != end_; ++i, ++s) {
-      out += *s;
+    out += *current;
+    ++current;
+    for (int i = 0; i < max_extension_length && current != end_;
+         ++i, ++current) {
+      out += *current;
     }
   }
   out += '\n';
@@ -362,7 +364,6 @@ std::string JsonParser::GetSurroundings() const {
   return out;
 }
 
-// TODO move this elsewhere
 std::string JsonParser::ErrorMessageName(const ControlToken ct) const {
   switch (ct) {
     case ControlToken::OBJECT_OPEN:
