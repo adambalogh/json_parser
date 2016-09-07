@@ -317,6 +317,9 @@ JsonValue JsonParser::ParseNull() {
 }
 
 bool JsonParser::Match(const std::string& val) {
+  if (val.size() > Capacity()) {
+    return false;
+  }
   for (int i = 0; i < val.size(); ++i) {
     if (p_ + i == end_) {
       return false;
@@ -326,7 +329,6 @@ bool JsonParser::Match(const std::string& val) {
     }
   }
   p_ += val.size();
-  assert(Capacity());
   return true;
 }
 
