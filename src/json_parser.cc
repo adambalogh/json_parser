@@ -215,6 +215,11 @@ JsonValue::StringType JsonParser::ParseString() {
   return str;
 }
 
+// Reads the next sequence of digits, starting from the current position,
+// and returns the corresponding number. It stops at the first non-digit character.
+//
+// e.g. for "13432.454", it would return the number 13432
+//
 // Only call this method if it is expected that we can parse a number with at
 // least 1 digit
 double JsonParser::ParseSimpleNumber() {
