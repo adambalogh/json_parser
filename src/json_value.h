@@ -10,7 +10,6 @@
 
 namespace jp {
 
-// TODO do this with templates
 class JsonValue {
  public:
   enum Type : int8_t { OBJECT, ARRAY, STRING, NUMBER, BOOL, NULL_VALUE };
@@ -114,7 +113,7 @@ class JsonValue {
  private:
   const Type type_;
 
-  // TODO use an union here
+  // TODO make this more efficient
   ObjectType obj_;
   ArrayType arr_;
   StringType str_;
